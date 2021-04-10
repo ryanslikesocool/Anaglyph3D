@@ -8,8 +8,8 @@ namespace Anaglyph3D
 {
     public class Anaglyph3DPass : ScriptableRenderPass
     {
-        private const string CAMERA_CLIP_PROP = "_CameraClip";
-        private const string SEPARATION_DISTANCE_PROP = "_SeparationDistance";
+        private const string CHANNEL_SEPARATION_PROP = "_ChannelSeparation";
+        private const string TINT_OPACITY_PROP = "_TintOpacity";
 
         private string profilerTag;
 
@@ -36,11 +36,9 @@ namespace Anaglyph3D
             Camera camera = Camera.main;
             if (camera == null) { return; }
 
-            camera.depthTextureMode |= DepthTextureMode.Depth;
-
             Material mat = settings.anaglyphMaterial;
-            mat.SetVector(CAMERA_CLIP_PROP, new Vector4(camera.nearClipPlane, camera.farClipPlane));
-            mat.SetVector(SEPARATION_DISTANCE_PROP, new Vector4(settings.channelSeparation.x, settings.channelSeparation.y, settings.distanceRange.x, settings.distanceRange.y));
+            mat.SetVector(CHANNEL_SEPARATION_PROP, new Vector2(settings.channelSeparation.x, settings.channelSeparation.y));
+            mat.SetFloat(TINT_OPACITY_PROP, settings.tintOpacity);
 
             cmd.Blit(renderer.cameraColorTarget, renderer.cameraColorTarget, mat);
 

@@ -11,7 +11,7 @@ namespace Anaglyph3D
         public RenderPassEvent passEvent = RenderPassEvent.BeforeRenderingPostProcessing;
         public Material anaglyphMaterial = null;
 
-        [Space] public Vector2 channelSeparation = new Vector2(0.025f, 0);
-        public Vector2 distanceRange = new Vector2(3, 15);
+        [Space] public Vector2 channelSeparation = new Vector2(-0.0025f, 0);
+        [Range(0, 1)] public float tintOpacity = 0.1f;
     }
 }
