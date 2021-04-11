@@ -12,6 +12,6 @@ namespace Anaglyph3D
         public Material anaglyphMaterial = null;
 
         [Space] public Vector2 channelSeparation = new Vector2(-0.0025f, 0);
-        [Range(0, 1)] public float tintOpacity = 0.1f;
+        [Range(0, 1)] public float tintOpacity = 0.05f;
     }
 }

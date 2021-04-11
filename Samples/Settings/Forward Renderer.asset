@@ -20,8 +20,7 @@ MonoBehaviour:
   shaders:
     blitPS: {fileID: 4800000, guid: c17132b1f77d20942aa75f8429c0f8bc, type: 3}
     copyDepthPS: {fileID: 4800000, guid: d6dae50ee9e1bfa4db75f19f99355220, type: 3}
-    screenSpaceShadowPS: {fileID: 4800000, guid: 0f854b35a0cf61a429bd5dcfea30eddd,
-      type: 3}
+    screenSpaceShadowPS: {fileID: 4800000, guid: 0f854b35a0cf61a429bd5dcfea30eddd, type: 3}
     samplingPS: {fileID: 4800000, guid: 04c410c9937594faa893a11dceb85f7e, type: 3}
     tileDepthInfoPS: {fileID: 0}
     tileDeferredPS: {fileID: 0}
@@ -60,5 +59,5 @@ MonoBehaviour:
   settings:
     passEvent: 550
     anaglyphMaterial: {fileID: 2100000, guid: e379a02c9d4654dcf9cce4b486765bfb, type: 2}
-    channelSeparation: {x: 0.0125, y: 0}
-    distanceRange: {x: 1.5, y: 24}
+    channelSeparation: {x: 0.0025, y: 0}
+    tintOpacity: 0.05
