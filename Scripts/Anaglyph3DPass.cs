@@ -14,7 +14,6 @@ namespace Anaglyph3D
         private string profilerTag;
 
         private Anaglyph3DSettings settings;
-        private ScriptableRenderer renderer;
 
         public Anaglyph3DPass(string profilerTag, Anaglyph3DSettings settings)
         {
@@ -23,18 +22,13 @@ namespace Anaglyph3D
             renderPassEvent = settings.passEvent;
         }
 
-        public void Setup(ScriptableRenderer renderer)
-        {
-            this.renderer = renderer;
-        }
-
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             CommandBuffer cmd = CommandBufferPool.Get(profilerTag);
-            // start rendering
-
-            Camera camera = Camera.main;
+            ScriptableRenderer renderer = renderingData.cameraData.renderer;
+            Camera camera = renderingData.cameraData.camera;
             if (camera == null) { return; }
+            // start rendering
 
             Material mat = settings.anaglyphMaterial;
             mat.SetVector(CHANNEL_SEPARATION_PROP, new Vector2(settings.channelSeparation.x, settings.channelSeparation.y));

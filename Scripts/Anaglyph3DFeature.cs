@@ -19,7 +19,6 @@ namespace Anaglyph3D
         {
             if (settings.anaglyphMaterial == null) { return; }
 
-            anaglyphPass.Setup(renderer);
             renderer.EnqueuePass(anaglyphPass);
         }
     }

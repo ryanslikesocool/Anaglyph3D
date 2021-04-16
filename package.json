@@ -1,12 +1,12 @@
 {
     "name": "com.ifelse.anaglyph",
     "displayName": "URP Anaglyph3D",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "unity": "2020.1",
     "description": "Anaglyph 3D (red/cyan) render feature for Unity's URP",
     "documentationUrl": "https://github.com/ryanslikesocool/URP-Anaglyph3D",
     "dependencies": {
-        "com.unity.render-pipelines.universal": "9.0.0"
+        "com.unity.render-pipelines.universal": "10.0.0"
     },
     "author": {
         "name": "Ryan Boyer",
