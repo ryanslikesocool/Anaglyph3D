@@ -1,7 +1,7 @@
 # URP Anaglyph3D
  Anaglyph 3D (red/cyan) render feature for Unity's URP
 
-![Sample Image](images/sample.jpg)
+![Sample Image](images~/sample.jpg)
 
 ## Heads Up
 This asset was created with URP 10.4.0, but it *should* work on any version of URP that has custom renderer feature and depth texture capabilities.
