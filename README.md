@@ -19,7 +19,10 @@ Open the Unity project you want the package installed in.\
 Open the package to install into the project's Plugins folder.
 
 ## Usage
-In your Forward Renderer asset, add the Anaglyph 3D render feature.\
-| `Pass Event` | Leave at `Before Rendering Post Processing` for best results. |
-| `Channel Separation` | Controls the x and y offset of the effect.  Super small values (like the default `(-0.0025f, 0)`) work best. |
-| `Tint Opacity` | Controls the red/cyan tint on the entire scene.  It's purely for aesthetic and likely does not help the actual 3d effect if wearing glasses. |
+In your Forward Renderer asset, add the Anaglyph 3D render feature and change settings as desired.
+
+| Property | Information |
+| ----- | ----- |
+| Pass Event | Leave at `Before Rendering Post Processing` for best results. |
+| Channel Separation | Controls the x and y offset of the effect.  Super small values (like the default `(-0.0025f, 0)`) work best. |
+| Tint Opacity | Controls the red/cyan tint on the entire scene.  It's purely for aesthetic and likely does not help the actual 3d effect if wearing glasses. |
