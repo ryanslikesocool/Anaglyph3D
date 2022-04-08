@@ -4,7 +4,7 @@
 ![Sample Image](images~/sample.jpg)
 
 ## Heads Up
-This asset was created with URP 10.4.0, but it *should* work on any version of URP that has custom renderer feature and depth texture capabilities.
+This asset was created with URP 11.0.0, but it *should* work on any version of URP that has custom renderer features, opaque texture, and depth texture capabilities.
 
 ## Install
 **RECOMMMENDED INSTALL**\
@@ -19,6 +19,7 @@ Open the Unity project you want the package installed in.\
 Open the package to install into the project's Plugins folder.
 
 ## Usage
+In your URP asset, enable depth and opaque textures.\
 In your Forward Renderer asset, add the Anaglyph 3D render feature and change settings as desired.
 
 | Property | Information |

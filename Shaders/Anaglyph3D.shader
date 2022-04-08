@@ -1,20 +1,16 @@
-// Made with love by Ryan Boyer http://ryanjboyer.com <3
+// Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
-Shader "RenderFeature/Anaglyph3D"
-{
-    Properties
-    {
+Shader "RenderFeature/Anaglyph3D" {
+    Properties {
         [HideInInspector] _ChannelSeparation ("Channel Separation", Vector) = (-0.0025, 0, 0, 0)
         [HideInInspector] _TintOpacity ("Tint Opacity", Float) = 0.05
     }
-    SubShader
-    {
+    SubShader {
         Cull Off
         ZWrite Off
         ZTest Always
 
-        Pass
-        {
+        Pass {
             HLSLPROGRAM
             #pragma target 2.0
             #pragma multi_compile_instancing
@@ -24,17 +20,16 @@ Shader "RenderFeature/Anaglyph3D"
 
 	        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
-            struct Attributes
-            {
+            struct Attributes {
                 float4 positionOS : POSITION;
                 float2 texcoord : TEXCOORD0;
                 UNITY_VERTEX_OUTPUT_STEREO
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            struct Varyings
-            {
+            struct Varyings {
                 float4 positionCS : SV_POSITION;
                 float2 texcoord : TEXCOORD0;
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -46,8 +41,7 @@ Shader "RenderFeature/Anaglyph3D"
                 uniform float _TintOpacity;
             CBUFFER_END
 
-            Varyings vert(Attributes IN)
-            {
+            Varyings vert(Attributes IN) {
                 Varyings OUT;
 
                 UNITY_SETUP_INSTANCE_ID(IN);
@@ -59,13 +53,16 @@ Shader "RenderFeature/Anaglyph3D"
                 return OUT;
             }
 
-            float4 frag(Varyings IN) : SV_Target
-            {
+            float4 frag(Varyings IN) : SV_Target {
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
-                float2 uvL = IN.texcoord - _ChannelSeparation;
-                float2 uvR = IN.texcoord + _ChannelSeparation;
+                float depth = SampleSceneDepth(IN.texcoord);
+                depth = 1 - Linear01Depth(depth, _ZBufferParams);
+                depth *= depth;
+
+                float2 uvL = IN.texcoord - (_ChannelSeparation * depth);
+                float2 uvR = IN.texcoord + (_ChannelSeparation * depth);
 
                 float3 lhs = SampleSceneColor(uvL);
                 float3 rhs = SampleSceneColor(uvR);
