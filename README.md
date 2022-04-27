@@ -3,27 +3,23 @@
 
 ![Sample Image](images~/sample.jpg)
 
-## Heads Up
-This asset was created with URP 11.0.0, but it *should* work on any version of URP that has custom renderer features, opaque texture, and depth texture capabilities.
-
 ## Install
-**RECOMMMENDED INSTALL**\
-Add via the Unity Package Manager\
-"Add package from git URL..."\
-`https://github.com/ryanslikesocool/URP-Anaglyph3D.git`\
-Add\
-\
-**NOT SO RECOMMENDED INSTALL**\
-Download the latest version from [Releases](https://github.com/ryanslikesocool/URP-Anaglyph3D/releases).\
-Open the Unity project you want the package installed in.\
-Open the package to install into the project's Plugins folder.
+**Recommended Installation** (Unity Package Manager)
+- Add via the Unity Package Manager
+- "Add package from git URL..."
+- `https://github.com/ryanslikesocool/Anaglyph3D.git`
+
+**Alternate  Install** (not recommended)
+- Get the latest [release](https://github.com/ryanslikesocool/Anaglyph3D/releases)
+- Import into your project's Plugins folder
 
 ## Usage
-In your URP asset, enable depth and opaque textures.\
-In your Forward Renderer asset, add the Anaglyph 3D render feature and change settings as desired.
+In your Forward Renderer asset, add the "Anaglyph Feature" render feature and change settings as desired.
 
 | Property | Information |
 | ----- | ----- |
 | Pass Event | Leave at `Before Rendering Post Processing` for best results. |
-| Channel Separation | Controls the x and y offset of the effect.  Super small values (like the default `(-0.0025f, 0)`) work best. |
-| Tint Opacity | Controls the red/cyan tint on the entire scene.  It's purely for aesthetic and likely does not help the actual 3d effect if wearing glasses. |
+| Layer Mask | Which layers to include when rendering the effect. |
+| Spacing | The spacing between the red and cyan channels.  This value may need to be larger for orthographic cameras. |
+| Look Target | The focal point, represented as units in front of the camera. |
+| Shader | The anaglpyh shader, located at the root directory of the package. |

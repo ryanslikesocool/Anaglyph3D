@@ -1,7 +1,7 @@
 {
   "name": "com.developedwithlove.anaglyph",
   "displayName": "URP Anaglyph3D",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "unity": "2021.1",
   "description": "Anaglyph 3D (red/cyan) render feature for Unity's URP",
   "documentationUrl": "https://github.com/ryanslikesocool/URP-Anaglyph3D",
