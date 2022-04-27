@@ -5,7 +5,6 @@
 
 ## Install
 **Recommended Installation** (Unity Package Manager)
-- Add via the Unity Package Manager
 - "Add package from git URL..."
 - `https://github.com/ryanslikesocool/Anaglyph3D.git`
 
