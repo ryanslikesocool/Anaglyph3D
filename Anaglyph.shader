@@ -1,3 +1,5 @@
+// Developed With Love by Ryan Boyer http://ryanjboyer.com <3
+
 Shader "RenderFeature/Anaglyph" {
     Properties {
         [HideInInspector] _MainTex ("Texture", 2D) = "clear" {}
@@ -14,6 +16,7 @@ Shader "RenderFeature/Anaglyph" {
             #pragma fragment frag
 
 		    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+		    #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 
             struct Attributes {
                 float4 positionOS : POSITION;
@@ -37,10 +40,6 @@ Shader "RenderFeature/Anaglyph" {
             TEXTURE2D(_RightTex);
 
             SAMPLER(sampler_MainTex);
-
-            half Luminance(half3 color) {
-                return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
-            }
 
             half4 frag (Varyings IN) : SV_Target {
                 half4 colorMain = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.texcoord);

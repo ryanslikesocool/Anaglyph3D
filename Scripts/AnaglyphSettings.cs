@@ -1,10 +1,11 @@
-using System.Collections.Generic;
+// Developed With Love by Ryan Boyer http://ryanjboyer.com <3
+
+using System;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
-    [System.Serializable]
+    [Serializable]
     public class Settings {
         public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
         public LayerMask layerMask = -1;

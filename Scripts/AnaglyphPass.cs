@@ -1,6 +1,7 @@
+// Developed With Love by Ryan Boyer http://ryanjboyer.com <3
+
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -11,6 +12,7 @@ namespace Anaglyph3D {
             Shader.PropertyToID("_RightTex")
         };
         private static readonly int TemporaryRenderTargetID = Shader.PropertyToID("_TemporaryRenderTarget");
+
         private List<ShaderTagId> shaderTagIDs = new List<ShaderTagId>();
 
         private RenderTargetIdentifier[] renderTargetIdentifiers = null;
@@ -18,7 +20,6 @@ namespace Anaglyph3D {
         private FilteringSettings filteringSettings;
         private RenderStateBlock renderStateBlock;
 
-        private readonly string profilerTag;
         private Settings settings;
         private Matrix4x4[] offsetMatrices = null;
 
@@ -42,12 +43,6 @@ namespace Anaglyph3D {
             renderTargetIdentifiers = new RenderTargetIdentifier[2];
 
             material = new Material(settings.shader);
-
-#if UNITY_IOS && !UNITY_EDITOR
-            //for (int i = 0; i < 28; i++) {
-            //    Debug.Log($"{(RenderTextureFormat)i} supported? {SystemInfo.SupportsRenderTextureFormat((RenderTextureFormat)i)}");
-            //}
-#endif
         }
 
         private Matrix4x4 CreateOffsetMatrix(float spacing, float lookTarget, int side) {
@@ -69,11 +64,6 @@ namespace Anaglyph3D {
 
             descriptor.colorFormat = RenderTextureFormat.ARGB32;
             descriptor.useDynamicScale = true;
-            //descriptor.autoGenerateMips = false;
-            //descriptor.useMipMap = false;
-            //descriptor.msaaSamples = 1;
-            //descriptor.dimension = TextureDimension.Tex2D;
-            //descriptor.stencilFormat = GraphicsFormat.None;
 
             { // temporary render target
                 descriptor.depthBufferBits = 0;
@@ -113,7 +103,7 @@ namespace Anaglyph3D {
                     context.ExecuteCommandBuffer(cmd);
                     cmd.Clear();
 
-                    cmd.SetRenderTarget(renderTargetIdentifiers[i], RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+                    cmd.SetRenderTarget(renderTargetIdentifiers[i], RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
 
                     context.DrawRenderers(renderingData.cullResults, ref drawingSettings, ref filteringSettings, ref renderStateBlock);
                 }

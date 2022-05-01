@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.Rendering;
+// Developed With Love by Ryan Boyer http://ryanjboyer.com <3
+
 using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
