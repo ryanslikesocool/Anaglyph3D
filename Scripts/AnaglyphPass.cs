@@ -108,7 +108,7 @@ namespace Anaglyph3D {
                     context.DrawRenderers(renderingData.cullResults, ref drawingSettings, ref filteringSettings, ref renderStateBlock);
                 }
 
-                cmd.SetRenderTarget(renderer.cameraColorTarget);
+                cmd.SetRenderTarget(renderer.cameraColorTarget, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
                 ConfigureClear(ClearFlag.None, Color.clear);
 
                 cmd.Blit(renderer.cameraColorTarget, TemporaryRenderTargetID, null);
