@@ -6,12 +6,13 @@ Shader "RenderFeature/Anaglyph" {
     }
     SubShader {
         Pass {
-            Cull Off
+            Cull Back
             ZWrite Off
             ZTest Off
-            Blend One Zero
+            Blend Off
 
             HLSLPROGRAM
+
             #pragma vertex vert
             #pragma fragment frag
 
@@ -40,30 +41,27 @@ Shader "RenderFeature/Anaglyph" {
             TEXTURE2D(_RightTex);
 
             SAMPLER(sampler_MainTex);
+            SAMPLER(sampler_LeftTex);
+            SAMPLER(sampler_RightTex);
 
-            half4 frag (Varyings IN) : SV_Target {
-                half4 colorMain = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.texcoord);
-                half4 colorL = SAMPLE_TEXTURE2D(_LeftTex, sampler_MainTex, IN.texcoord);
-                half4 colorR = SAMPLE_TEXTURE2D(_RightTex, sampler_MainTex, IN.texcoord);
+            float4 frag (Varyings IN) : SV_Target {
+                float4 colorMain = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.texcoord);
+                float4 colorL = SAMPLE_TEXTURE2D(_LeftTex, sampler_LeftTex, IN.texcoord);
+                float4 colorR = SAMPLE_TEXTURE2D(_RightTex, sampler_RightTex, IN.texcoord);
 
-                half lumL = Luminance(colorL.xyz);
-                half lumR = Luminance(colorR.xyz);
+                float lumL = Luminance(colorL.rgb);
+                float lumR = Luminance(colorR.rgb);
+                float3 anaglyph = float3(lumL, lumR, lumR);
 
-                half3 anaglyph = half3(lumL, lumR, lumR);
+                float opacity = max(colorL.a, colorR.a);
 
-                //float opacity = (colorL.a + colorR.a) * 0.5f;
-                half opacity = max(colorL.a, colorR.a);
-
-                //float3 anaglyph = float3(colorL.r, colorR.gb);
-                //anaglyph = step(0.001, anaglyph);
-                //float maxAlpha = max(colorL.a, colorR.a);
-
-                half4 output;
+                float4 output;
                 output.rgb = lerp(colorMain.rgb, anaglyph, opacity);
                 output.a = 1;
 
                 return output;
             }
+
             ENDHLSL
         }
     }
