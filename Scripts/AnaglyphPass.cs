@@ -11,30 +11,42 @@ namespace Anaglyph3D {
             Shader.PropertyToID("_LeftTex"),
             Shader.PropertyToID("_RightTex")
         };
-        private static readonly int TemporaryRenderTargetID = Shader.PropertyToID("_TemporaryRenderTarget");
+
+#if !UNITY_IOS && !UNITY_TVOS
+        private static readonly int IntermediateRenderTargetID = Shader.PropertyToID("_IntermediateRenderTarget");
+        private RenderTargetIdentifier intermediate;
+#endif
+
+        private RenderTargetIdentifier source;
+        private RenderTargetIdentifier destination;
 
         private List<ShaderTagId> shaderTagIDs = new List<ShaderTagId>();
 
         private RenderTargetIdentifier[] renderTargetIdentifiers = null;
-        private RenderTargetIdentifier tempRenderTargetIdentifier;
+
         private FilteringSettings filteringSettings;
         private RenderStateBlock renderStateBlock;
 
         private Settings settings;
         private Matrix4x4[] offsetMatrices = null;
 
-        private Material material;
+        internal Material Material => settings.Material;
+
+        private LocalKeyword opacityModeAdditiveKeyword;
+        private LocalKeyword opacityModeChannelKeyword;
+        private LocalKeyword singleChannelKeyword;
+        private LocalKeyword overlayEffectKeyword;
 
         public AnaglyphPass(Settings settings, string tag) {
             profilingSampler = new ProfilingSampler(tag);
-            filteringSettings = new FilteringSettings(null, settings.layerMask);
+            filteringSettings = new FilteringSettings(RenderQueueRange.all, settings.layerMask);
 
             shaderTagIDs.Add(new ShaderTagId("SRPDefaultUnlit"));
             shaderTagIDs.Add(new ShaderTagId("UniversalForward"));
             shaderTagIDs.Add(new ShaderTagId("UniversalForwardOnly"));
             shaderTagIDs.Add(new ShaderTagId("LightweightForward"));
 
-            renderStateBlock = new RenderStateBlock(RenderStateMask.Nothing);
+            renderStateBlock = new RenderStateBlock(RenderStateMask.Raster);
 
             this.renderPassEvent = settings.renderPassEvent;
             this.settings = settings;
@@ -42,51 +54,61 @@ namespace Anaglyph3D {
             offsetMatrices = new Matrix4x4[2];
             renderTargetIdentifiers = new RenderTargetIdentifier[2];
 
-            material = new Material(settings.shader);
+            opacityModeAdditiveKeyword = new LocalKeyword(Material.shader, "_OPACITY_MODE_ADDITIVE");
+            opacityModeChannelKeyword = new LocalKeyword(Material.shader, "_OPACITY_MODE_CHANNEL");
+            singleChannelKeyword = new LocalKeyword(Material.shader, "_SINGLE_CHANNEL");
+            overlayEffectKeyword = new LocalKeyword(Material.shader, "_OVERLAY_EFFECT");
         }
 
-        private Matrix4x4 CreateOffsetMatrix(float spacing, float lookTarget, int side) {
+        private void CreateOffsetMatrix(float spacing, float lookTarget, int side, ref Matrix4x4 matrix) {
             float xOffset = spacing * side * 0.5f;
             Vector3 offset = Vector3.right * xOffset;
             if (lookTarget != 0) {
                 Quaternion lookRotation = Quaternion.LookRotation(new Vector3(xOffset, 0, lookTarget).normalized, Vector3.up);
-                return Matrix4x4.TRS(offset, lookRotation, Vector3.one);
+                matrix = Matrix4x4.TRS(offset, lookRotation, Vector3.one);
             } else {
-                return Matrix4x4.TRS(offset, Quaternion.identity, Vector3.one);
+                matrix = Matrix4x4.TRS(offset, Quaternion.identity, Vector3.one);
             }
         }
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData) {
-            offsetMatrices[0] = CreateOffsetMatrix(settings.spacing, settings.lookTarget, -1);
-            offsetMatrices[1] = CreateOffsetMatrix(settings.spacing, settings.lookTarget, 1);
+            this.source = renderingData.cameraData.renderer.cameraColorTarget;
+            this.destination = renderingData.cameraData.renderer.cameraColorTarget;
+        }
 
-            RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
+        public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor) {
+            base.Configure(cmd, cameraTextureDescriptor);
 
-            descriptor.colorFormat = RenderTextureFormat.ARGB32;
+            Material.SetKeyword(opacityModeAdditiveKeyword, settings.opacityMode == Settings.OpacityMode.Additive);
+            Material.SetKeyword(opacityModeChannelKeyword, settings.opacityMode == Settings.OpacityMode.Channel);
+            Material.SetKeyword(singleChannelKeyword, settings.TextureCount == 1);
+            Material.SetKeyword(overlayEffectKeyword, settings.overlayEffect);
+
+            CreateOffsetMatrix(settings.spacing, settings.lookTarget, -1, ref offsetMatrices[0]);
+            CreateOffsetMatrix(settings.spacing, settings.lookTarget, 1, ref offsetMatrices[1]);
+
+            RenderTextureDescriptor descriptor = cameraTextureDescriptor;
+            descriptor.colorFormat = RenderTextureFormat.ARGB32; // comment out this line to enable transparent recordings
             descriptor.useDynamicScale = true;
+            descriptor.depthBufferBits = 16;
 
-            { // temporary render target
-                descriptor.depthBufferBits = 0;
-
-                cmd.GetTemporaryRT(TemporaryRenderTargetID, descriptor);
-                tempRenderTargetIdentifier = new RenderTargetIdentifier(TemporaryRenderTargetID);
-                ConfigureTarget(tempRenderTargetIdentifier);
+            int textureCount = settings.TextureCount;
+            for (int i = 0; i < settings.TextureCount; i++) {
+                cmd.GetTemporaryRT(RenderTargetIDs[i], descriptor);
+                renderTargetIdentifiers[i] = new RenderTargetIdentifier(RenderTargetIDs[i]);
+                ConfigureTarget(renderTargetIdentifiers[i]);
             }
 
-            { // anaglyph targets
-                descriptor.depthBufferBits = 8;
+#if !UNITY_IOS && !UNITY_TVOS
+            cmd.GetTemporaryRT(IntermediateRenderTargetID, descriptor);
+            this.intermediate = new RenderTargetIdentifier(IntermediateRenderTargetID);
+#endif
 
-                for (int i = 0; i < 2; i++) {
-                    cmd.GetTemporaryRT(RenderTargetIDs[i], descriptor);
-                    renderTargetIdentifiers[i] = new RenderTargetIdentifier(RenderTargetIDs[i]);
-                    ConfigureTarget(renderTargetIdentifiers[i], depthAttachment);
-                    ConfigureClear(ClearFlag.Color, Color.clear);
-                }
-            }
+            //ConfigureClear(ClearFlag.Color | ClearFlag.Depth, Color.clear);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
-            SortingCriteria sortingCriteria = SortingCriteria.CommonOpaque;
+            SortingCriteria sortingCriteria = SortingCriteria.RenderQueue;
             DrawingSettings drawingSettings = CreateDrawingSettings(shaderTagIDs, ref renderingData, sortingCriteria);
 
             CommandBuffer cmd = CommandBufferPool.Get();
@@ -94,40 +116,54 @@ namespace Anaglyph3D {
                 ScriptableRenderer renderer = renderingData.cameraData.renderer;
                 Camera camera = renderingData.cameraData.camera;
 
-                for (int i = 0; i < 2; i++) {
-                    Matrix4x4 viewMatrix = offsetMatrices[i] * camera.worldToCameraMatrix;
-                    cmd.SetViewMatrix(viewMatrix);
+                if (settings.TextureCount == 1) { // render only left channel
+                    cmd.SetViewMatrix(camera.worldToCameraMatrix);
 
-                    cmd.ClearRenderTarget(false, true, Color.clear);
+                    cmd.ClearRenderTarget(true, true, Color.clear);
 
                     context.ExecuteCommandBuffer(cmd);
                     cmd.Clear();
 
-                    cmd.SetRenderTarget(renderTargetIdentifiers[i], RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
-
+                    cmd.SetRenderTarget(renderTargetIdentifiers[0], RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
                     context.DrawRenderers(renderingData.cullResults, ref drawingSettings, ref filteringSettings, ref renderStateBlock);
+                } else { // render both channels
+                    for (int i = 0; i < 2; i++) {
+                        Matrix4x4 viewMatrix = offsetMatrices[i] * camera.worldToCameraMatrix;
+                        cmd.SetViewMatrix(viewMatrix);
+
+                        cmd.ClearRenderTarget(true, true, Color.clear);
+
+                        context.ExecuteCommandBuffer(cmd);
+                        cmd.Clear();
+
+                        cmd.SetRenderTarget(renderTargetIdentifiers[i], RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
+                        context.DrawRenderers(renderingData.cullResults, ref drawingSettings, ref filteringSettings, ref renderStateBlock);
+                    }
                 }
 
-                cmd.SetRenderTarget(renderer.cameraColorTarget, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
-                ConfigureClear(ClearFlag.None, Color.clear);
-
-                cmd.Blit(renderer.cameraColorTarget, TemporaryRenderTargetID, null);
-                cmd.Blit(TemporaryRenderTargetID, renderer.cameraColorTarget, material);
+#if !UNITY_IOS && !UNITY_TVOS
+                cmd.Blit(source, intermediate, Material);
+                cmd.Blit(intermediate, destination);
+#else
+                cmd.Blit(source, destination, material);
+#endif
             }
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
         }
 
-        public override void FrameCleanup(CommandBuffer cmd) {
+        public override void OnCameraCleanup(CommandBuffer cmd) {
             if (cmd == null) {
                 throw new System.ArgumentNullException("cmd");
             }
 
-            cmd.ReleaseTemporaryRT(TemporaryRenderTargetID);
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < settings.TextureCount; i++) {
                 cmd.ReleaseTemporaryRT(RenderTargetIDs[i]);
             }
+#if !UNITY_IOS && !UNITY_TVOS
+            cmd.ReleaseTemporaryRT(IntermediateRenderTargetID);
+#endif
         }
     }
 }

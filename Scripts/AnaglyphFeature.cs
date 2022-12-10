@@ -9,10 +9,14 @@ namespace Anaglyph3D {
         private AnaglyphPass pass;
 
         public override void Create() {
-            pass = new AnaglyphPass(settings, name);
+            pass = new AnaglyphPass(settings, "Anaglyph");
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
+            if (pass.Material == null || settings.layerMask == 0) {
+                return;
+            }
+
             renderer.EnqueuePass(pass);
         }
     }
