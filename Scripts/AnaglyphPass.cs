@@ -145,7 +145,7 @@ namespace Anaglyph3D {
                 cmd.Blit(source, intermediate, Material);
                 cmd.Blit(intermediate, destination);
 #else
-                cmd.Blit(source, destination, material);
+                cmd.Blit(source, destination, Material);
 #endif
             }
 
