@@ -21,6 +21,10 @@ namespace Anaglyph3D {
             renderer.EnqueuePass(pass);
         }
 
+        public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData) {
+            pass.Setup(renderer.cameraColorTargetHandle);
+        }
+
         protected override void Dispose(bool disposing) {
             CoreUtils.Destroy(settings.Material);
             pass.Dispose();
