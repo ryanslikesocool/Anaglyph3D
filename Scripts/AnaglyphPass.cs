@@ -79,19 +79,6 @@ namespace Anaglyph3D {
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData) {
             this.source = renderingData.cameraData.renderer.cameraColorTargetHandle;
             this.destination = renderingData.cameraData.renderer.cameraColorTargetHandle;
-
-            //            RenderTextureDescriptor descriptor = cameraTextureDescriptor;
-            //            descriptor.colorFormat = RenderTextureFormat.ARGB32; // comment out this line to enable transparent recordings
-            //            descriptor.useDynamicScale = true;
-            //            descriptor.depthBufferBits = 16;
-            //
-            //            for (int i = 0; i < settings.TextureCount; i++) {
-            //                RenderingUtils.ReAllocateIfNeeded(ref renderHandles[i], descriptor, name: AnaglyphPass.RenderTargetNames[i]);
-            //            }
-            //
-            //#if !UNITY_IOS && !UNITY_TVOS
-            //            RenderingUtils.ReAllocateIfNeeded(ref intermediate, descriptor, name: AnaglyphPass.IntermediateRenderTargetName);
-            //#endif
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor) {
@@ -169,10 +156,13 @@ namespace Anaglyph3D {
                 }
 
 #if !UNITY_IOS && !UNITY_TVOS
-                Blitter.BlitCameraTexture(cmd, source, intermediate, Material, 0);
-                Blitter.BlitCameraTexture(cmd, intermediate, destination);
+                cmd.Blit(source, intermediate, Material);
+                //Blitter.BlitCameraTexture(source, intermediate, Material, pass: 0);
+                cmd.Blit(intermediate, destination);
+                //Blitter.BlitCameraTexture(intermediate, destination);
 #else
-                Blitter.BlitCameraTexture(source, destination, Material);
+                //cmd.Blit(source, destination, Material);
+                Blitter.BlitCameraTexture(source, destination, Material, pass: 0);
 #endif
             }
 
