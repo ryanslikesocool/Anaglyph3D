@@ -25,9 +25,9 @@ Shader "RenderFeature/Anaglyph" {
             HLSLPROGRAM
             #pragma target 2.0
 
-            #pragma multi_compile_fragment _ _OPACITY_MODE_ADDITIVE _OPACITY_MODE_CHANNEL
-            #pragma multi_compile_fragment _ _SINGLE_CHANNEL
-            #pragma multi_compile_fragment _ _OVERLAY_EFFECT
+            #pragma shader_feature_fragment _ _OPACITY_MODE_ADDITIVE _OPACITY_MODE_CHANNEL
+            #pragma shader_feature_fragment _ _SINGLE_CHANNEL
+            #pragma shader_feature_fragment _ _OVERLAY_EFFECT
 
             #pragma vertex vert
             #pragma fragment frag
