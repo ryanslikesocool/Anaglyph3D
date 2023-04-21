@@ -2,11 +2,12 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
     [Serializable]
-    public class Settings {
+    public sealed class Settings {
         public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
         [Tooltip("Which layers to include when rendering the effect.")] public LayerMask layerMask = -1;
 
@@ -30,8 +31,7 @@ namespace Anaglyph3D {
         public Material Material {
             get {
                 if (_material == null && shader != null) {
-                    _material = new Material(shader);
-                    _material.hideFlags = HideFlags.HideAndDontSave;
+                    _material = CoreUtils.CreateEngineMaterial(shader);
                 }
                 return _material;
             }

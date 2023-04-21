@@ -23,7 +23,7 @@ Shader "RenderFeature/Anaglyph" {
 
         Pass {
             HLSLPROGRAM
-            #pragma target 2.0
+            #pragma target 2.5
 
             #pragma shader_feature_fragment _ _OPACITY_MODE_ADDITIVE _OPACITY_MODE_CHANNEL
             #pragma shader_feature_fragment _ _SINGLE_CHANNEL

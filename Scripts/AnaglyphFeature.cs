@@ -1,9 +1,10 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
-    public class AnaglyphFeature : ScriptableRendererFeature {
+    public sealed class AnaglyphFeature : ScriptableRendererFeature {
         public Settings settings = new Settings();
 
         private AnaglyphPass pass;
@@ -18,6 +19,11 @@ namespace Anaglyph3D {
             }
 
             renderer.EnqueuePass(pass);
+        }
+
+        protected override void Dispose(bool disposing) {
+            CoreUtils.Destroy(settings.Material);
+            pass.Dispose();
         }
     }
 }
