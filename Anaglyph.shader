@@ -2,7 +2,9 @@
 
 Shader "RenderFeature/Anaglyph" {
     Properties {
-        [HideInInspector] _MainTex ("Main Texture", 2D) = "clear" {}
+        //[HideInInspector] _BlitTexture ("Main Texture", 2D) = "clear" { }
+        //[HideInInspector] _AnaglyphLeftTex ("Left Texture", 2D) = "clear" { }
+        //[HideInInspector] _AnaglyphRightTex ("Right Texture", 2D) = "clear" { }
     }
     SubShader {
         Tags {
@@ -12,7 +14,6 @@ Shader "RenderFeature/Anaglyph" {
 
         ZWrite Off
         Cull Off
-        LOD 100
 
         Pass {
             HLSLPROGRAM
@@ -48,29 +49,29 @@ Shader "RenderFeature/Anaglyph" {
             }
 
             #if _OVERLAY_EFFECT
-                TEXTURE2D(_MainTex);
-                SAMPLER(sampler_MainTex);
+            //    TEXTURE2D(_BlitTexture);
+                SAMPLER(sampler_BlitTexture);
             #endif
 
-            TEXTURE2D(_LeftTex);
-            SAMPLER(sampler_LeftTex);
+            TEXTURE2D(_AnaglyphLeftTex);
+            SAMPLER(sampler_AnaglyphLeftTex);
 
             #if !_SINGLECHANNEL
-                TEXTURE2D(_RightTex);
-                SAMPLER(sampler_RightTex);
+                TEXTURE2D(_AnaglyphRightTex);
+                SAMPLER(sampler_AnaglyphRightTex);
             #endif
 
             half4 frag (Varyings IN) : SV_Target {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
 
                 #if _OVERLAY_EFFECT
-                    half4 colorMain = SAMPLE_TEXTURE2D_X(_MainTex, sampler_MainTex, IN.texcoord);
+                    half4 colorMain = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_BlitTexture, IN.texcoord);
                     // colorMain.rgb = half3(0.663, 0.663, 0.5);
                 #endif
 
-                half4 output;
+                half4 output = half(0.0);
 
-                half4 colorL = SAMPLE_TEXTURE2D_X(_LeftTex, sampler_LeftTex, IN.texcoord);
+                half4 colorL = SAMPLE_TEXTURE2D_X(_AnaglyphLeftTex, sampler_AnaglyphLeftTex, IN.texcoord);
                 half lumL = Luminance(colorL.xyz);
                 half alphaL = colorL.a;
                 output.a = colorL.a;
@@ -79,7 +80,7 @@ Shader "RenderFeature/Anaglyph" {
                     half opacity = alphaL;
                     half anaglyph = lumL;
                 #else
-                    half4 colorR = SAMPLE_TEXTURE2D_X(_RightTex, sampler_RightTex, IN.texcoord);
+                    half4 colorR = SAMPLE_TEXTURE2D_X(_AnaglyphRightTex, sampler_AnaglyphRightTex, IN.texcoord);
                     half alphaR = colorR.a;
                     output.a = max(output.a, colorR.a);
 
@@ -98,12 +99,8 @@ Shader "RenderFeature/Anaglyph" {
                 #if _OVERLAY_EFFECT
                     output.rgb = lerp(colorMain.rgb, anaglyph, opacity);
                     output.a = max(output.a, colorMain.a);
-
-                    output = colorMain;
                 #else
                     output.rgb = anaglyph;
-
-                    output = colorL;
                 #endif
 
                 return output;

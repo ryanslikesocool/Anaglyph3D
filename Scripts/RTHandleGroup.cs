@@ -1,10 +1,6 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.RendererUtils;
-using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
     public struct RTHandleGroup {

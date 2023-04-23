@@ -1,5 +1,6 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -10,10 +11,18 @@ namespace Anaglyph3D {
         private AnaglyphPass pass;
 
         public override void Create() {
+            if (settings.material == null && settings.shader != null) {
+                settings.material = CoreUtils.CreateEngineMaterial(settings.shader);
+            }
+
             pass = new AnaglyphPass(settings, "Anaglyph");
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
+            if (renderingData.cameraData.isPreviewCamera || renderingData.cameraData.isSceneViewCamera) {
+                return;
+            }
+
             if (pass.Material == null || settings.layerMask == 0) {
                 return;
             }
@@ -21,13 +30,9 @@ namespace Anaglyph3D {
             renderer.EnqueuePass(pass);
         }
 
-        public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData) {
-            pass.Setup(renderer.cameraColorTargetHandle);
-        }
-
         protected override void Dispose(bool disposing) {
-            CoreUtils.Destroy(settings.Material);
-            pass.Dispose();
+            CoreUtils.Destroy(settings.material);
+            pass.Release();
         }
     }
 }
