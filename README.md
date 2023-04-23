@@ -4,7 +4,7 @@
 ![Sample Image](images~/sample.jpg)
 
 ## Requirements
-Anaglyph3D [v2](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v2.1.1) requires Unity 2021.3 with URP 12.1.8 or later.
+Anaglyph3D [v2](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v2.1.1) requires Unity 2021.3 with URP 12.1.8 or later.\
 Anaglyph3D [v3](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v3.0.0) requires Unity 2022.1 or later with URP 13.1.7 or later.
 
 ## Install
