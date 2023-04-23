@@ -6,7 +6,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
     [Serializable]
-    public class Settings {
+    public sealed class Settings {
         public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
         [Tooltip("Which layers to include when rendering the effect.")] public LayerMask layerMask = -1;
 
@@ -18,7 +18,7 @@ namespace Anaglyph3D {
 
         [Space, Tooltip("The anaglpyh shader, located at the root directory of the package.")] public Shader shader = null;
 
-        internal int TextureCount => spacing == 0 ? 1 : 2;
+        internal bool SingleChannel => spacing == 0;
 
         public enum OpacityMode : int {
             None = 0,
@@ -26,15 +26,6 @@ namespace Anaglyph3D {
             Channel = 2
         }
 
-        private Material _material = default;
-        public Material Material {
-            get {
-                if (_material == null && shader != null) {
-                    _material = new Material(shader);
-                    _material.hideFlags = HideFlags.HideAndDontSave;
-                }
-                return _material;
-            }
-        }
+        internal Material material = default;
     }
 }
