@@ -1,11 +1,7 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
 Shader "RenderFeature/Anaglyph" {
-    Properties {
-        //[HideInInspector] _BlitTexture ("Main Texture", 2D) = "clear" { }
-        //[HideInInspector] _AnaglyphLeftTex ("Left Texture", 2D) = "clear" { }
-        //[HideInInspector] _AnaglyphRightTex ("Right Texture", 2D) = "clear" { }
-    }
+    Properties { }
     SubShader {
         Tags {
             "RenderPipeline" = "UniversalPipeline"
@@ -44,12 +40,12 @@ Shader "RenderFeature/Anaglyph" {
             #endif
 
                 output.positionCS = pos;
-                output.texcoord = uv; // * _BlitScaleBias.xy + _BlitScaleBias.zw;
+                output.texcoord = uv;
                 return output;
             }
 
             #if _OVERLAY_EFFECT
-            //    TEXTURE2D(_BlitTexture);
+            //  TEXTURE2D(_BlitTexture); // already defined in RP Core > Blit.hlsl
                 SAMPLER(sampler_BlitTexture);
             #endif
 
@@ -66,7 +62,6 @@ Shader "RenderFeature/Anaglyph" {
 
                 #if _OVERLAY_EFFECT
                     half4 colorMain = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_BlitTexture, IN.texcoord);
-                    // colorMain.rgb = half3(0.663, 0.663, 0.5);
                 #endif
 
                 half4 output = half(0.0);

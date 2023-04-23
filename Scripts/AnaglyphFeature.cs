@@ -1,6 +1,5 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
-using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 

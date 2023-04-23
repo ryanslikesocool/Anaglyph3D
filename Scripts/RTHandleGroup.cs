@@ -3,7 +3,7 @@
 using UnityEngine.Rendering;
 
 namespace Anaglyph3D {
-    public struct RTHandleGroup {
+    internal struct RTHandleGroup {
         public RTHandle color;
         public RTHandle depth;
 

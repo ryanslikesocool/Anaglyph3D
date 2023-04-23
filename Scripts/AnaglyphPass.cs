@@ -3,7 +3,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.RendererUtils;
 using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
@@ -59,7 +58,6 @@ namespace Anaglyph3D {
             RenderTextureDescriptor depthDescriptor = renderingData.cameraData.cameraTargetDescriptor;
 
             colorDescriptor.depthBufferBits = 0;  // Color and depth cannot be combined in RTHandles
-            //Debug.Log(colorDescriptor.colorFormat);
             colorDescriptor.colorFormat = RenderTextureFormat.BGRA32;
 
             RenderingUtils.ReAllocateIfNeeded(ref intermediateTargetHandle, Vector2.one, colorDescriptor, name: AnaglyphPass.IntermediateTargetName);
@@ -72,7 +70,7 @@ namespace Anaglyph3D {
                 ConfigureTarget(renderTargetHandles[i].color, renderTargetHandles[i].depth);
             }
 
-            // -----
+            // ---
 
             Extensions.CreateOffsetMatrix(settings.spacing, settings.lookTarget, -1, ref offsetMatrices[0]);
             Extensions.CreateOffsetMatrix(settings.spacing, settings.lookTarget, 1, ref offsetMatrices[1]);
@@ -100,8 +98,6 @@ namespace Anaglyph3D {
                         Draw(viewMatrix, RenderTargetNames[i], renderTargetHandles[i], ref renderingData, ref drawingSettings);
                     }
                 }
-
-                //CoreUtils.SetRenderTarget(cmd, intermediateTargetHandle);
 
                 context.ExecuteCommandBuffer(cmd);
                 cmd.Clear();
