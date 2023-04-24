@@ -19,33 +19,15 @@ Shader "RenderFeature/Anaglyph" {
             #pragma shader_feature_fragment _ _SINGLE_CHANNEL
             #pragma shader_feature_fragment _ _OVERLAY_EFFECT
 
-            #pragma vertex VertNoScaleBias
+            #pragma vertex Vert // defined in RP Core > Blit.hlsl
             #pragma fragment frag
 
 		    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 		    #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-            Varyings VertNoScaleBias(Attributes input) {
-                Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-
-            #if SHADER_API_GLES
-                float4 pos = input.positionOS;
-                float2 uv  = input.uv;
-            #else
-                float4 pos = GetFullScreenTriangleVertexPosition(input.vertexID);
-                float2 uv  = GetFullScreenTriangleTexCoord(input.vertexID);
-            #endif
-
-                output.positionCS = pos;
-                output.texcoord = uv;
-                return output;
-            }
-
             #if _OVERLAY_EFFECT
-            //  TEXTURE2D(_BlitTexture); // already defined in RP Core > Blit.hlsl
+            //  TEXTURE2D(_BlitTexture); // defined in RP Core > Blit.hlsl
                 SAMPLER(sampler_BlitTexture);
             #endif
 

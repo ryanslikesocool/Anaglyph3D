@@ -60,12 +60,12 @@ namespace Anaglyph3D {
             colorDescriptor.depthBufferBits = 0;  // Color and depth cannot be combined in RTHandles
             colorDescriptor.colorFormat = RenderTextureFormat.BGRA32;
 
-            RenderingUtils.ReAllocateIfNeeded(ref intermediateTargetHandle, Vector2.one, colorDescriptor, name: AnaglyphPass.IntermediateTargetName);
+            RenderingUtils.ReAllocateIfNeeded(ref intermediateTargetHandle, colorDescriptor, name: AnaglyphPass.IntermediateTargetName);
             ConfigureTarget(intermediateTargetHandle);
 
             for (int i = 0; i < renderTargetHandles.Length; i++) {
-                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].color, Vector2.one, colorDescriptor, name: AnaglyphPass.RenderTargetNames[i]);
-                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].depth, Vector2.one, depthDescriptor);
+                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].color, colorDescriptor, name: AnaglyphPass.RenderTargetNames[i]);
+                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].depth, depthDescriptor);
 
                 ConfigureTarget(renderTargetHandles[i].color, renderTargetHandles[i].depth);
             }
@@ -103,7 +103,7 @@ namespace Anaglyph3D {
                 cmd.Clear();
 
                 Blitter.BlitCameraTexture(cmd, renderer.cameraColorTargetHandle, intermediateTargetHandle, Material, 0);
-                Blitter.BlitCameraTexture(cmd, intermediateTargetHandle, renderer.cameraColorTargetHandle, Vector2.one);
+                Blitter.BlitCameraTexture(cmd, intermediateTargetHandle, renderer.cameraColorTargetHandle);
             }
 
             context.ExecuteCommandBuffer(cmd);
