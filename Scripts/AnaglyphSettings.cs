@@ -7,16 +7,16 @@ using UnityEngine.Rendering.Universal;
 namespace Anaglyph3D {
     [Serializable]
     public sealed class Settings {
-        public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+        [Tooltip("Leave at 'Before Rendering Post Processing' for best results.")] public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
         [Tooltip("Which layers to include when rendering the effect.")] public LayerMask layerMask = -1;
 
         [Header("Transform")]
-        [Tooltip("The spacing between the red and cyan channels.  This value may need to be larger for orthographic cameras.")] public float spacing = 0.2f;
-        [Tooltip("The focal point, represented as units in front of the camera.")] public float lookTarget = 10f;
+        [Tooltip("The spacing between the red and cyan channels.\nA value of '0' will ignore the focal point.  This is useful for orthographic cameras.\nA negative value will swap the red and cyan.")] public float spacing = 0.2f;
+        [Tooltip("The point 'x' units in front of the camera where the red and cyan channels meet.")] public float focalPoint = 10f;
 
         [Header("Blending")]
-        [Tooltip("Overlay the layers with the effect on top of other layers.  This is useful for when only some layers should be rendered with the effect, but is also more computationally expensive.")] public OverlayMode overlayMode = OverlayMode.Opacity;
-        [Tooltip("How should anaglyph layers be rendered on top of normal layers?  This requires Overlay Mode to be active.")] public BlendMode blendMode = BlendMode.None;
+        [Tooltip("'None' - Replace the background with the effect.  This is ideal for rendering the entire screen with the effect.\n'Opacity' - Overlay the effect based on its opacity.\n'Depth' - Overlay the effect based on its depth.")] public OverlayMode overlayMode = OverlayMode.Opacity;
+        [Tooltip("'None' - Do not blend the effect onto the background.\n'Additive' - Perform stylistic blending by adding the effect to the background.\n'Channel' - Perform correct blending based on each eye's channels.")] public BlendMode blendMode = BlendMode.None;
 
         [Space, Tooltip("The anaglpyh shader, located at the root directory of the package.")] public Shader shader = null;
 

@@ -90,8 +90,8 @@ namespace Anaglyph3D {
 
             // ---
 
-            Extensions.CreateOffsetMatrix(settings.spacing, settings.lookTarget, -1, ref offsetMatrices[0]);
-            Extensions.CreateOffsetMatrix(settings.spacing, settings.lookTarget, 1, ref offsetMatrices[1]);
+            Extensions.CreateOffsetMatrix(settings.spacing, settings.focalPoint, -1, ref offsetMatrices[0]);
+            Extensions.CreateOffsetMatrix(settings.spacing, settings.focalPoint, 1, ref offsetMatrices[1]);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
@@ -163,11 +163,11 @@ namespace Anaglyph3D {
         public override void OnCameraCleanup(CommandBuffer cmd) {
             cameraTargetHandle = null;
 
-            //cmd.DisableKeyword(Material, singleChannelKeyword);
-            //cmd.DisableKeyword(Material, overlayModeOpacityKeyword);
-            //cmd.DisableKeyword(Material, overlayModeDepthKeyword);
-            //cmd.DisableKeyword(Material, blendModeAdditiveKeyword);
-            //cmd.DisableKeyword(Material, blendModeChannelKeyword);
+            cmd.DisableKeyword(Material, singleChannelKeyword);
+            cmd.DisableKeyword(Material, overlayModeOpacityKeyword);
+            cmd.DisableKeyword(Material, overlayModeDepthKeyword);
+            cmd.DisableKeyword(Material, blendModeAdditiveKeyword);
+            cmd.DisableKeyword(Material, blendModeChannelKeyword);
         }
 
         public void Release() {
