@@ -5,19 +5,21 @@ Shader "RenderFeature/Anaglyph" {
     SubShader {
         Tags {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Fullscreen"
+            "RenderType" = "Opaque"
         }
 
         ZWrite Off
         Cull Off
 
         Pass {
-            HLSLPROGRAM
-            #pragma target 2.5
+            Name "Anaglyph"
 
-            #pragma shader_feature_fragment _ _OPACITY_MODE_ADDITIVE _OPACITY_MODE_CHANNEL
-            #pragma shader_feature_fragment _ _SINGLE_CHANNEL
-            #pragma shader_feature_fragment _ _OVERLAY_EFFECT
+            HLSLPROGRAM
+            #pragma target 2.0
+
+            #pragma multi_compile_fragment _ _SINGLE_CHANNEL
+            #pragma multi_compile_fragment _ _OVERLAY_MODE_OPACITY _OVERLAY_MODE_DEPTH
+            #pragma multi_compile_fragment _ _BLEND_MODE_ADDITIVE _BLEND_MODE_CHANNEL
 
             #pragma vertex Vert // defined in RP Core > Blit.hlsl
             #pragma fragment frag
@@ -26,54 +28,79 @@ Shader "RenderFeature/Anaglyph" {
 		    #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-            #if _OVERLAY_EFFECT
-            //  TEXTURE2D(_BlitTexture); // defined in RP Core > Blit.hlsl
-                SAMPLER(sampler_BlitTexture);
-            #endif
-
-            TEXTURE2D(_AnaglyphLeftTex);
-            SAMPLER(sampler_AnaglyphLeftTex);
+            uniform TEXTURE2D(_AnaglyphLeft);
+            uniform SAMPLER(sampler_AnaglyphLeft);
 
             #if !_SINGLECHANNEL
-                TEXTURE2D(_AnaglyphRightTex);
-                SAMPLER(sampler_AnaglyphRightTex);
+                uniform TEXTURE2D(_AnaglyphRight);
+                uniform SAMPLER(sampler_AnaglyphRight);
+            #endif
+
+            #if _OVERLAY_MODE_OPACITY || _OVERLAY_MODE_DEPTH
+                // TEXTURE2D(_BlitTexture); // defined in RP Core > Blit.hlsl
+                uniform SAMPLER(sampler_BlitTexture);
+            #endif
+
+            #if _OVERLAY_MODE_DEPTH
+                uniform TEXTURE2D(_AnaglyphLeftDepth);
+                #if !_SINGLE_CHANNEL
+                    uniform TEXTURE2D(_AnaglyphRightDepth);
+                #endif
             #endif
 
             half4 frag (Varyings IN) : SV_Target {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
 
-                #if _OVERLAY_EFFECT
-                    half4 colorMain = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_BlitTexture, IN.texcoord);
+                #if _OVERLAY_MODE_OPACITY || _OVERLAY_MODE_DEPTH
+                    const half4 colorMain = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_BlitTexture, IN.texcoord);
+                #endif
+                #if _OVERLAY_MODE_DEPTH
+                    const half stepThreshold = half(0.0001);
                 #endif
 
                 half4 output = half(0.0);
 
-                half4 colorL = SAMPLE_TEXTURE2D_X(_AnaglyphLeftTex, sampler_AnaglyphLeftTex, IN.texcoord);
-                half lumL = Luminance(colorL.xyz);
-                half alphaL = colorL.a;
-                output.a = colorL.a;
+                const half4 colorL = SAMPLE_TEXTURE2D_X(_AnaglyphLeft, sampler_AnaglyphLeft, IN.texcoord);
+                const half lumL = Luminance(colorL.xyz);
+                #if _OVERLAY_MODE_DEPTH
+                    const half depthL = SAMPLE_TEXTURE2D_X(_AnaglyphLeftDepth, sampler_AnaglyphLeft, IN.texcoord).r;
+                    const half leftA = step(depthL, stepThreshold);
+                #else
+                    const half leftA = colorL.a;
+                #endif
+                output.a = leftA;
 
                 #if _SINGLE_CHANNEL
-                    half opacity = alphaL;
-                    half anaglyph = lumL;
+                    half opacity = leftA;
+                    const half anaglyph = lumL;
                 #else
-                    half4 colorR = SAMPLE_TEXTURE2D_X(_AnaglyphRightTex, sampler_AnaglyphRightTex, IN.texcoord);
-                    half alphaR = colorR.a;
-                    output.a = max(output.a, colorR.a);
-
-                    #if _OPACITY_MODE_ADDITIVE
-                        half3 opacity = (alphaL + alphaR) * half(0.5);
-                    #elif _OPACITY_MODE_CHANNEL
-                        half3 opacity = half3(alphaL, alphaR, alphaR);
+                    const half4 colorR = SAMPLE_TEXTURE2D_X(_AnaglyphRight, sampler_AnaglyphRight, IN.texcoord);
+                    const half lumR = Luminance(colorR.xyz);
+                    #if _OVERLAY_MODE_DEPTH
+                        const half depthR = SAMPLE_TEXTURE2D_X(_AnaglyphRightDepth, sampler_AnaglyphRight, IN.texcoord).r;
+                        const half rightA = step(depthR, stepThreshold);
                     #else
-                        half3 opacity = max(alphaL, alphaR);
+                        const half rightA = colorR.a;
                     #endif
 
-                    half lumR = Luminance(colorR.xyz);
-                    half3 anaglyph = half3(lumL, lumR, lumR);
+                    output.a = max(output.a, rightA);
+
+                    #if _BLEND_MODE_ADDITIVE
+                       half3 opacity = (leftA + rightA) * half(0.5);
+                    #elif _BLEND_MODE_CHANNEL
+                        half3 opacity = half3(leftA, rightA, rightA);
+                    #else
+                       half3 opacity = max(leftA, rightA);
+                    #endif
+
+                    const half3 anaglyph = half3(lumL, lumR, lumR);
                 #endif
 
-                #if _OVERLAY_EFFECT
+                #if _OVERLAY_MODE_DEPTH && UNITY_REVERSED_Z
+                    opacity = half(1.0) - opacity;
+                #endif
+
+                #if _OVERLAY_MODE_OPACITY || _OVERLAY_MODE_DEPTH
                     output.rgb = lerp(colorMain.rgb, anaglyph, opacity);
                     output.a = max(output.a, colorMain.a);
                 #else

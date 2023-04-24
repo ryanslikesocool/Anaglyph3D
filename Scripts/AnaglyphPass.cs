@@ -1,20 +1,33 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
+#if !(UNITY_IOS || UNITY_TVOS)
+#define ANAGLYPH_INTERMEDIATE_TEXTURE
+#endif
+
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
     internal sealed class AnaglyphPass : ScriptableRenderPass {
-        private static readonly string[] RenderTargetNames = new string[2]  {
-            "_AnaglyphLeftTex",
-            "_AnaglyphRightTex"
+        private static readonly string[] RenderTargetColorNames = new string[2]  {
+            "_AnaglyphLeft",
+            "_AnaglyphRight"
         };
-        private static readonly string IntermediateTargetName = "_AnaglyphIntermediateTex";
+        private static readonly string[] RenderTargetDepthNames = new string[2] {
+            "_AnaglyphLeftDepth",
+            "_AnaglyphRightDepth"
+        };
 
-        private RTHandle intermediateTargetHandle = null;
+        private RTHandle cameraTargetHandle = null;
         private RTHandleGroup[] renderTargetHandles = null;
+
+        //#if ANAGLYPH_INTERMEDIATE_TEXTURE
+        private static readonly string IntermediateTargetName = "_AnaglyphIntermediate";
+        private RTHandle intermediateTargetHandle = null;
+        //#endif
 
         private List<ShaderTagId> shaderTagsList = new List<ShaderTagId>();
 
@@ -26,10 +39,11 @@ namespace Anaglyph3D {
 
         internal Material Material => settings.material;
 
-        private LocalKeyword opacityModeAdditiveKeyword;
-        private LocalKeyword opacityModeChannelKeyword;
         private LocalKeyword singleChannelKeyword;
-        private LocalKeyword overlayEffectKeyword;
+        private LocalKeyword overlayModeOpacityKeyword;
+        private LocalKeyword overlayModeDepthKeyword;
+        private LocalKeyword blendModeAdditiveKeyword;
+        private LocalKeyword blendModeChannelKeyword;
 
         public AnaglyphPass(Settings settings, string tag) {
             profilingSampler = new ProfilingSampler(tag);
@@ -47,10 +61,11 @@ namespace Anaglyph3D {
             offsetMatrices = new Matrix4x4[2];
             renderTargetHandles = new RTHandleGroup[2];
 
-            opacityModeAdditiveKeyword = new LocalKeyword(Material.shader, "_OPACITY_MODE_ADDITIVE");
-            opacityModeChannelKeyword = new LocalKeyword(Material.shader, "_OPACITY_MODE_CHANNEL");
             singleChannelKeyword = new LocalKeyword(Material.shader, "_SINGLE_CHANNEL");
-            overlayEffectKeyword = new LocalKeyword(Material.shader, "_OVERLAY_EFFECT");
+            overlayModeOpacityKeyword = new LocalKeyword(Material.shader, "_OVERLAY_MODE_OPACITY");
+            overlayModeDepthKeyword = new LocalKeyword(Material.shader, "_OVERLAY_MODE_DEPTH");
+            blendModeAdditiveKeyword = new LocalKeyword(Material.shader, "_BLEND_MODE_ADDITIVE");
+            blendModeChannelKeyword = new LocalKeyword(Material.shader, "_BLEND_MODE_CHANNEL");
         }
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData) {
@@ -58,14 +73,17 @@ namespace Anaglyph3D {
             RenderTextureDescriptor depthDescriptor = renderingData.cameraData.cameraTargetDescriptor;
 
             colorDescriptor.depthBufferBits = 0;  // Color and depth cannot be combined in RTHandles
-            colorDescriptor.colorFormat = RenderTextureFormat.BGRA32;
 
+            cameraTargetHandle = renderingData.cameraData.renderer.cameraColorTargetHandle;
+
+            //#if ANAGLYPH_INTERMEDIATE_TEXTURE
             RenderingUtils.ReAllocateIfNeeded(ref intermediateTargetHandle, colorDescriptor, name: AnaglyphPass.IntermediateTargetName);
             ConfigureTarget(intermediateTargetHandle);
+            //#endif
 
             for (int i = 0; i < renderTargetHandles.Length; i++) {
-                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].color, colorDescriptor, name: AnaglyphPass.RenderTargetNames[i]);
-                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].depth, depthDescriptor);
+                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].color, colorDescriptor, name: AnaglyphPass.RenderTargetColorNames[i]);
+                RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].depth, depthDescriptor, name: AnaglyphPass.RenderTargetDepthNames[i]);
 
                 ConfigureTarget(renderTargetHandles[i].color, renderTargetHandles[i].depth);
             }
@@ -85,54 +103,77 @@ namespace Anaglyph3D {
                 SortingCriteria sortingCriteria = renderingData.cameraData.defaultOpaqueSortFlags;
                 DrawingSettings drawingSettings = CreateDrawingSettings(shaderTagsList, ref renderingData, sortingCriteria);
 
-                cmd.SetKeyword(Material, opacityModeAdditiveKeyword, settings.opacityMode == Settings.OpacityMode.Additive);
-                cmd.SetKeyword(Material, opacityModeChannelKeyword, settings.opacityMode == Settings.OpacityMode.Channel);
                 cmd.SetKeyword(Material, singleChannelKeyword, settings.SingleChannel);
-                cmd.SetKeyword(Material, overlayEffectKeyword, settings.overlayEffect);
+                cmd.SetKeyword(Material, overlayModeOpacityKeyword, settings.overlayMode == Settings.OverlayMode.Opacity);
+                cmd.SetKeyword(Material, overlayModeDepthKeyword, settings.overlayMode == Settings.OverlayMode.Depth);
+                cmd.SetKeyword(Material, blendModeAdditiveKeyword, settings.blendMode == Settings.BlendMode.Additive);
+                cmd.SetKeyword(Material, blendModeChannelKeyword, settings.blendMode == Settings.BlendMode.Channel);
 
                 if (settings.SingleChannel) { // render only left channel
-                    Draw(camera.worldToCameraMatrix, RenderTargetNames[0], renderTargetHandles[0], ref renderingData, ref drawingSettings);
+                    Draw(camera.worldToCameraMatrix, RenderTargetColorNames[0], RenderTargetDepthNames[0], renderTargetHandles[0], ref renderingData, ref drawingSettings);
                 } else { // render both channels
                     for (int i = 0; i < renderTargetHandles.Length; i++) {
                         Matrix4x4 viewMatrix = offsetMatrices[i] * camera.worldToCameraMatrix;
-                        Draw(viewMatrix, RenderTargetNames[i], renderTargetHandles[i], ref renderingData, ref drawingSettings);
+                        Draw(viewMatrix, RenderTargetColorNames[i], RenderTargetDepthNames[i], renderTargetHandles[i], ref renderingData, ref drawingSettings);
                     }
                 }
 
                 context.ExecuteCommandBuffer(cmd);
                 cmd.Clear();
 
-                Blitter.BlitCameraTexture(cmd, renderer.cameraColorTargetHandle, intermediateTargetHandle, Material, 0);
-                Blitter.BlitCameraTexture(cmd, intermediateTargetHandle, renderer.cameraColorTargetHandle);
+                //#if ANAGLYPH_INTERMEDIATE_TEXTURE
+                Blitter.BlitCameraTexture(cmd, cameraTargetHandle, intermediateTargetHandle, Material, 0);
+                Blitter.BlitCameraTexture(cmd, intermediateTargetHandle, cameraTargetHandle);
+                //#else
+                //Blitter.BlitCameraTexture(cmd, cameraTargetHandle, cameraTargetHandle, Material, 0);
+                //#endif
             }
 
             context.ExecuteCommandBuffer(cmd);
             cmd.Clear();
             CommandBufferPool.Release(cmd);
 
-            void Draw(in Matrix4x4 matrix, in string target, in RTHandleGroup handle, ref RenderingData renderingData, ref DrawingSettings drawingSettings) {
+            void Draw(in Matrix4x4 matrix, in string colorTarget, in string depthTarget, in RTHandleGroup handle, ref RenderingData renderingData, ref DrawingSettings drawingSettings) {
                 cmd.SetViewMatrix(matrix);
 
-                CoreUtils.SetRenderTarget(cmd, handle.color, handle.depth, ClearFlag.Color | ClearFlag.Depth, Color.clear);
+                CoreUtils.SetRenderTarget(
+                    cmd: cmd,
+                    colorBuffer: handle.color,
+                    colorLoadAction: RenderBufferLoadAction.DontCare,
+                    colorStoreAction: RenderBufferStoreAction.Store,
+                    depthBuffer: handle.depth,
+                    depthLoadAction: RenderBufferLoadAction.DontCare,
+                    depthStoreAction: settings.NeedsDepth ? RenderBufferStoreAction.Store : RenderBufferStoreAction.DontCare,
+                    ClearFlag.Color | ClearFlag.Depth,
+                    Color.clear
+                );
 
                 context.ExecuteCommandBuffer(cmd);
                 cmd.Clear();
 
                 context.DrawRenderers(renderingData.cullResults, ref drawingSettings, ref filteringSettings, ref renderStateBlock);
 
-                cmd.SetGlobalTexture(target, handle.color);
+                cmd.SetGlobalTexture(colorTarget, handle.color);
+                if (settings.NeedsDepth) {
+                    cmd.SetGlobalTexture(depthTarget, handle.depth);
+                }
             }
         }
 
         public override void OnCameraCleanup(CommandBuffer cmd) {
-            cmd.DisableKeyword(Material, opacityModeAdditiveKeyword);
-            cmd.DisableKeyword(Material, opacityModeChannelKeyword);
-            cmd.DisableKeyword(Material, singleChannelKeyword);
-            cmd.DisableKeyword(Material, overlayEffectKeyword);
+            cameraTargetHandle = null;
+
+            //cmd.DisableKeyword(Material, singleChannelKeyword);
+            //cmd.DisableKeyword(Material, overlayModeOpacityKeyword);
+            //cmd.DisableKeyword(Material, overlayModeDepthKeyword);
+            //cmd.DisableKeyword(Material, blendModeAdditiveKeyword);
+            //cmd.DisableKeyword(Material, blendModeChannelKeyword);
         }
 
         public void Release() {
+            //#if ANAGLYPH_INTERMEDIATE_TEXTURE
             intermediateTargetHandle?.Release();
+            //#endif
             foreach (RTHandleGroup group in renderTargetHandles) {
                 group.Release();
             }
