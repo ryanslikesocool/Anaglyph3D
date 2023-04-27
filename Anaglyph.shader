@@ -5,7 +5,12 @@ Shader "RenderFeature/Anaglyph" {
     SubShader {
         Tags {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Opaque"
+            "UniversalMaterialType" = "SimpleLit"
+            "LightMode" = "SRPDefaultUnlit"
+			"RenderType" = "Overlay"
+			"Queue" = "Overlay"
+            "ForceNoShadowCasting" = "True"
+            "IgnoreProjector" = "True"
         }
 
         ZWrite Off
@@ -28,25 +33,27 @@ Shader "RenderFeature/Anaglyph" {
 		    #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-            uniform TEXTURE2D(_AnaglyphLeft);
-            uniform SAMPLER(sampler_AnaglyphLeft);
+            CBUFFER_START(UnityPerMaterial)
+                uniform TEXTURE2D(_AnaglyphLeft);
+                uniform SAMPLER(sampler_AnaglyphLeft);
 
-            #if !_SINGLECHANNEL
-                uniform TEXTURE2D(_AnaglyphRight);
-                uniform SAMPLER(sampler_AnaglyphRight);
-            #endif
-
-            #if _OVERLAY_MODE_OPACITY || _OVERLAY_MODE_DEPTH
-                // TEXTURE2D(_BlitTexture); // defined in RP Core > Blit.hlsl
-                uniform SAMPLER(sampler_BlitTexture);
-            #endif
-
-            #if _OVERLAY_MODE_DEPTH
-                uniform TEXTURE2D(_AnaglyphLeftDepth);
-                #if !_SINGLE_CHANNEL
-                    uniform TEXTURE2D(_AnaglyphRightDepth);
+                #if !_SINGLECHANNEL
+                    uniform TEXTURE2D(_AnaglyphRight);
+                    uniform SAMPLER(sampler_AnaglyphRight);
                 #endif
-            #endif
+
+                #if _OVERLAY_MODE_OPACITY || _OVERLAY_MODE_DEPTH
+                    // TEXTURE2D(_BlitTexture); // defined in RP Core > Blit.hlsl
+                    uniform SAMPLER(sampler_BlitTexture);
+                #endif
+
+                #if _OVERLAY_MODE_DEPTH
+                    uniform TEXTURE2D(_AnaglyphLeftDepth);
+                    #if !_SINGLE_CHANNEL
+                        uniform TEXTURE2D(_AnaglyphRightDepth);
+                    #endif
+                #endif
+            CBUFFER_END
 
             half4 frag (Varyings IN) : SV_Target {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);

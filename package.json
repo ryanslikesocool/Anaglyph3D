@@ -1,7 +1,7 @@
 {
   "name": "com.developedwithlove.anaglyph3d",
   "displayName": "Anaglyph3D",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "unity": "2022.1",
   "description": "Anaglyph 3D (red/cyan) render feature for Unity's Universal Render Pipeline",
   "documentationUrl": "https://github.com/ryanslikesocool/Anaglyph3D",

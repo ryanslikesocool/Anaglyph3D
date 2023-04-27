@@ -24,10 +24,8 @@ namespace Anaglyph3D {
         private RTHandle cameraTargetHandle = null;
         private RTHandleGroup[] renderTargetHandles = null;
 
-        //#if ANAGLYPH_INTERMEDIATE_TEXTURE
         private static readonly string IntermediateTargetName = "_AnaglyphIntermediate";
         private RTHandle intermediateTargetHandle = null;
-        //#endif
 
         private List<ShaderTagId> shaderTagsList = new List<ShaderTagId>();
 
@@ -72,14 +70,23 @@ namespace Anaglyph3D {
             RenderTextureDescriptor colorDescriptor = renderingData.cameraData.cameraTargetDescriptor;
             RenderTextureDescriptor depthDescriptor = renderingData.cameraData.cameraTargetDescriptor;
 
-            colorDescriptor.depthBufferBits = 0;  // Color and depth cannot be combined in RTHandles
+            colorDescriptor.depthBufferBits = 0;
+            if (settings.overlayMode == Settings.OverlayMode.Opacity) {
+                colorDescriptor.colorFormat = settings.opacityOverlayRenderTextureFormat;
+                colorDescriptor.memoryless = RenderTextureMemoryless.Depth | RenderTextureMemoryless.MSAA;
+            }
+
+            depthDescriptor.depthBufferBits = (int)settings.depthOverlayBufferBitCount;
+            if (settings.overlayMode != Settings.OverlayMode.Depth) {
+                depthDescriptor.memoryless = RenderTextureMemoryless.Color | RenderTextureMemoryless.Depth | RenderTextureMemoryless.MSAA;
+            }
+
+            depthDescriptor.graphicsFormat = GraphicsFormat.None;
 
             cameraTargetHandle = renderingData.cameraData.renderer.cameraColorTargetHandle;
 
-            //#if ANAGLYPH_INTERMEDIATE_TEXTURE
             RenderingUtils.ReAllocateIfNeeded(ref intermediateTargetHandle, colorDescriptor, name: AnaglyphPass.IntermediateTargetName);
             ConfigureTarget(intermediateTargetHandle);
-            //#endif
 
             for (int i = 0; i < renderTargetHandles.Length; i++) {
                 RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].color, colorDescriptor, name: AnaglyphPass.RenderTargetColorNames[i]);
@@ -121,12 +128,8 @@ namespace Anaglyph3D {
                 context.ExecuteCommandBuffer(cmd);
                 cmd.Clear();
 
-                //#if ANAGLYPH_INTERMEDIATE_TEXTURE
                 Blitter.BlitCameraTexture(cmd, cameraTargetHandle, intermediateTargetHandle, Material, 0);
                 Blitter.BlitCameraTexture(cmd, intermediateTargetHandle, cameraTargetHandle);
-                //#else
-                //Blitter.BlitCameraTexture(cmd, cameraTargetHandle, cameraTargetHandle, Material, 0);
-                //#endif
             }
 
             context.ExecuteCommandBuffer(cmd);
@@ -171,9 +174,7 @@ namespace Anaglyph3D {
         }
 
         public void Release() {
-            //#if ANAGLYPH_INTERMEDIATE_TEXTURE
             intermediateTargetHandle?.Release();
-            //#endif
             foreach (RTHandleGroup group in renderTargetHandles) {
                 group.Release();
             }

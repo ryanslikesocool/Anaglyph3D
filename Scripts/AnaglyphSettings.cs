@@ -9,6 +9,7 @@ namespace Anaglyph3D {
     public sealed class Settings {
         [Tooltip("Leave at 'Before Rendering Post Processing' for best results.")] public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
         [Tooltip("Which layers to include when rendering the effect.")] public LayerMask layerMask = -1;
+        [Tooltip("The anaglpyh shader, located at the root directory of the package.")] public Shader shader = null;
 
         [Header("Transform")]
         [Tooltip("The spacing between the red and cyan channels.\nA value of '0' will ignore the focal point.  This is useful for orthographic cameras.\nA negative value will swap the red and cyan.")] public float spacing = 0.2f;
@@ -18,7 +19,9 @@ namespace Anaglyph3D {
         [Tooltip("'None' - Replace the background with the effect.  This is ideal for rendering the entire screen with the effect.\n'Opacity' - Overlay the effect based on its opacity.\n'Depth' - Overlay the effect based on its depth.")] public OverlayMode overlayMode = OverlayMode.Opacity;
         [Tooltip("'None' - Do not blend the effect onto the background.\n'Additive' - Perform stylistic blending by adding the effect to the background.\n'Channel' - Perform correct blending based on each eye's channels.")] public BlendMode blendMode = BlendMode.None;
 
-        [Space, Tooltip("The anaglpyh shader, located at the root directory of the package.")] public Shader shader = null;
+        [Header("Rendering")]
+        [Tooltip("The render texture format to use when Overlay Mode is set to Opacity.")] public RenderTextureFormat opacityOverlayRenderTextureFormat = RenderTextureFormat.ARGB32;
+        [Tooltip("The depth buffer bit count to use when Overlay Mode is set to Depth.")] public DepthBufferBitCount depthOverlayBufferBitCount = DepthBufferBitCount._24;
 
         internal bool SingleChannel => spacing == 0;
 
@@ -36,6 +39,13 @@ namespace Anaglyph3D {
             None = 0,
             Additive = 1,
             Channel = 2
+        }
+
+        public enum DepthBufferBitCount : int {
+            [InspectorName("0")] _0 = 0,
+            [InspectorName("16")] _16 = 16,
+            [InspectorName("24")] _24 = 24,
+            [InspectorName("32")] _32 = 32,
         }
     }
 }
