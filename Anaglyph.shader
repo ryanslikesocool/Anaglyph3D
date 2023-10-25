@@ -1,7 +1,14 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
-Shader "RenderFeature/Anaglyph" {
+Shader "Render Feature/Anaglyph" {
     Properties { }
+
+    HLSLINCLUDE
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+    #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
+    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+    ENDHLSL
+
     SubShader {
         Tags {
             "RenderPipeline" = "UniversalPipeline"
@@ -26,12 +33,8 @@ Shader "RenderFeature/Anaglyph" {
             #pragma multi_compile_fragment _ _OVERLAY_MODE_OPACITY _OVERLAY_MODE_DEPTH
             #pragma multi_compile_fragment _ _BLEND_MODE_ADDITIVE _BLEND_MODE_CHANNEL
 
-            #pragma vertex Vert // defined in RP Core > Blit.hlsl
+            #pragma vertex Vert // defined in SRP Core > Runtime > Utilities > Blit.hlsl
             #pragma fragment frag
-
-		    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-		    #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 uniform TEXTURE2D(_AnaglyphLeft);
