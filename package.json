@@ -1,11 +1,11 @@
 {
   "name": "com.developedwithlove.anaglyph3d",
   "displayName": "Anaglyph3D",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "unity": "2022.1",
   "description": "Anaglyph 3D (red/cyan) render feature for Unity's Universal Render Pipeline",
   "documentationUrl": "https://github.com/ryanslikesocool/Anaglyph3D",
-	"licenseUrl": "https://github.com/ryanslikesocool/Anaglyph3D/blob/main/LICENSE.md",
+  "licenseUrl": "https://github.com/ryanslikesocool/Anaglyph3D/blob/main/LICENSE.md",
   "author": {
     "name": "Ryan Boyer",
     "email": "ryanjboyer@gmail.com",
@@ -14,5 +14,5 @@
   "dependencies": {
     "com.unity.render-pipelines.universal": "13.1.7"
   },
-	"hideInEditor": false
+  "hideInEditor": false
 }
