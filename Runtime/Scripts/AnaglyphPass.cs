@@ -1,15 +1,9 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
-#if !(UNITY_IOS || UNITY_TVOS)
-#define ANAGLYPH_INTERMEDIATE_TEXTURE
-#endif
-
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using System.Reflection;
 
 namespace Anaglyph3D {
 	internal sealed class AnaglyphPass : ScriptableRenderPass {
@@ -23,8 +17,6 @@ namespace Anaglyph3D {
 			"_AnaglyphLeftDepth",
 			"_AnaglyphRightDepth"
 		};
-		private static readonly string IntermediateTargetColorName = "_AnaglyphIntermediateColor";
-		private static readonly string IntermediateTargetDepthName = "_AnaglyphIntermediateDepth";
 
 		private RTHandleGroup cameraTargetHandle = default;
 		private RTHandleGroup intermediateTargetHandle = default;
@@ -68,16 +60,15 @@ namespace Anaglyph3D {
 		}
 
 		public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData) {
-
 			RenderTextureDescriptor colorDescriptor = renderingData.cameraData.cameraTargetDescriptor;
 			RenderTextureDescriptor depthDescriptor = renderingData.cameraData.cameraTargetDescriptor;
 
+			// depth doesn't write if MSAA is on for some reason?
 			colorDescriptor.depthBufferBits = 0;
-			depthDescriptor.depthBufferBits = 32;
+			colorDescriptor.msaaSamples = 1;
 
-			RenderingUtils.ReAllocateIfNeeded(ref intermediateTargetHandle.color, colorDescriptor, name: IntermediateTargetColorName);
-			RenderingUtils.ReAllocateIfNeeded(ref intermediateTargetHandle.depth, depthDescriptor, name: IntermediateTargetDepthName);
-			ConfigureTarget(intermediateTargetHandle.color, intermediateTargetHandle.depth);
+			depthDescriptor.depthBufferBits = 32;
+			depthDescriptor.msaaSamples = 1;
 
 			for (int i = 0; i < renderTargetHandles.Length; i++) {
 				RenderingUtils.ReAllocateIfNeeded(ref renderTargetHandles[i].color, colorDescriptor, name: RenderTargetColorNames[i]);
@@ -93,25 +84,24 @@ namespace Anaglyph3D {
 		}
 
 		public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
+			Camera camera = renderingData.cameraData.camera;
+			Matrix4x4 worldToCameraMatrix = camera.worldToCameraMatrix;
+
 			CommandBuffer cmd = CommandBufferPool.Get();
 			using (new ProfilingScope(cmd, profilingSampler)) {
 				context.ExecuteCommandBuffer(cmd);
 				cmd.Clear();
-
-				ScriptableRenderer renderer = renderingData.cameraData.renderer;
-				Camera camera = renderingData.cameraData.camera;
 
 				SortingCriteria sortingCriteria = renderingData.cameraData.defaultOpaqueSortFlags;
 				DrawingSettings drawingSettings = CreateDrawingSettings(shaderTagsList, ref renderingData, sortingCriteria);
 
 				cmd.SetKeyword(material, singleChannelKeyword, settings.SingleChannel);
 
-				if (settings.SingleChannel) { // render only left channel
+				if (settings.SingleChannel) { // render only left channel using the current camera matrix
 					Draw(null, RenderTargetColorNames[0], RenderTargetDepthNames[0], renderTargetHandles[0], ref renderingData, ref drawingSettings);
 				} else { // render both channels
 					for (int i = 0; i < 2; i++) {
-						Matrix4x4 viewMatrix = offsetMatrices[i] * camera.worldToCameraMatrix;
-
+						Matrix4x4 viewMatrix = offsetMatrices[i] * worldToCameraMatrix;
 						Draw(viewMatrix, RenderTargetColorNames[i], RenderTargetDepthNames[i], renderTargetHandles[i], ref renderingData, ref drawingSettings);
 					}
 				}
@@ -119,11 +109,17 @@ namespace Anaglyph3D {
 				context.ExecuteCommandBuffer(cmd);
 				cmd.Clear();
 
-				Blitter.BlitCameraTexture(cmd, cameraTargetHandle.color, intermediateTargetHandle.color, material, 0);
-				Blitter.BlitCameraTexture(cmd, intermediateTargetHandle.color, cameraTargetHandle.color);
+				cmd.SetRenderTarget(
+					cameraTargetHandle.color, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
+					cameraTargetHandle.depth, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
+				);
 
-				//context.ExecuteCommandBuffer(cmd);
-				//cmd.Clear();
+				cmd.DrawProcedural(Matrix4x4.identity, material, 0, MeshTopology.Triangles, 3);
+
+				// reset the camera matrix if it was changed
+				if (!settings.SingleChannel) {
+					cmd.SetViewMatrix(worldToCameraMatrix);
+				}
 			}
 
 			context.ExecuteCommandBuffer(cmd);
@@ -139,7 +135,7 @@ namespace Anaglyph3D {
 					cmd,
 					targets.color, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
 					targets.depth, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
-					ClearFlag.Color | ClearFlag.Depth, Color.black
+					ClearFlag.Color | ClearFlag.Depth, Color.clear
 				);
 
 				context.ExecuteCommandBuffer(cmd);

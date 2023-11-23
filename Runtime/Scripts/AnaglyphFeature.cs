@@ -1,6 +1,5 @@
 // Developed With Love by Ryan Boyer http://ryanjboyer.com <3
 
-using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -15,9 +14,10 @@ namespace Anaglyph3D {
 		}
 
 		public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData) {
-			RTHandle color = renderer.cameraColorTargetHandle;
-			RTHandle depth = renderer.cameraDepthTargetHandle;
-			pass.Setup(color, depth);
+			pass.Setup(
+				renderer.cameraColorTargetHandle,
+				renderer.cameraDepthTargetHandle
+			);
 		}
 
 		public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {

@@ -6,8 +6,6 @@ Shader "Render Feature/Anaglyph" {
     HLSLINCLUDE
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-    #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
-    #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
     ENDHLSL
 
     SubShader {
@@ -23,7 +21,8 @@ Shader "Render Feature/Anaglyph" {
 
         ZWrite On
 		ZTest Always
-        Cull Off
+        Cull Back
+		Blend SrcAlpha OneMinusSrcAlpha
 
         Pass {
             Name "Anaglyph"
@@ -33,7 +32,7 @@ Shader "Render Feature/Anaglyph" {
 
             #pragma multi_compile_fragment _ _ANAGLYPH_SINGLE_CHANNEL
 
-            #pragma vertex Vert // defined in SRP Core > Runtime > Utilities > Blit.hlsl
+            #pragma vertex vert
             #pragma fragment frag
 
 			uniform TEXTURE2D(_AnaglyphLeft);
@@ -46,24 +45,52 @@ Shader "Render Feature/Anaglyph" {
 			uniform SAMPLER(sampler_AnaglyphRight);
 #endif
 
-			// TEXTURE2D(_BlitTexture); // defined in RP Core > Blit.hlsl
-			uniform SAMPLER(sampler_BlitTexture);
+#if SHADER_API_GLES
+			struct Attributes {
+				float4 positionOS : POSITION;
+				float2 texcoord : TEXCOORD0;
+			};
+#else
+			struct Attributes {
+				uint vertexID : SV_VertexID;
+			};
+#endif
+
+			struct Varyings {
+				float4 positionCS : SV_POSITION;
+				float2 texcoord : TEXCOORD0;
+			};
+
+			Varyings vert(Attributes input) {
+				Varyings output;
+
+#if SHADER_API_GLES
+				float4 pos = input.positionOS;
+				float2 texcoord  = input.texcoord;
+#else
+				float4 pos = GetFullScreenTriangleVertexPosition(input.vertexID);
+				float2 texcoord  = GetFullScreenTriangleTexCoord(input.vertexID);
+#endif
+
+				output.positionCS = pos;
+				output.texcoord = texcoord;
+				return output;
+			}
 
             half4 frag (Varyings IN, out float depth : SV_Depth) : SV_Target {
-				const half4 sceneColor = SAMPLE_TEXTURE2D(_BlitTexture, sampler_BlitTexture, IN.texcoord);
                 const float sceneDepth = SampleSceneDepth(IN.texcoord);
 
                 const half4 colorL = SAMPLE_TEXTURE2D(_AnaglyphLeft, sampler_AnaglyphLeft, IN.texcoord);
 				const float depthL = SAMPLE_TEXTURE2D(_AnaglyphLeftDepth, sampler_AnaglyphLeft, IN.texcoord).r;
 
 #ifdef _ANAGLYPH_SINGLE_CHANNEL
-				const half3 anaglyphColor = colorL.xyz;
+				const half4 anaglyphColor = colorL;
 				const float anaglyphDepth = depthL;
 #else // multi-channel
 				const half4 colorR = SAMPLE_TEXTURE2D(_AnaglyphRight, sampler_AnaglyphRight, IN.texcoord);
 				const float depthR = SAMPLE_TEXTURE2D(_AnaglyphRightDepth, sampler_AnaglyphRight, IN.texcoord).r;
 
-				const half3 anaglyphColor = half3(colorL.x, colorR.y, colorR.z);
+				const half4 anaglyphColor = half4(colorL.x, colorR.y, colorR.z, (colorL.a + colorR.a) * 0.5);
 
 				const float anaglyphDepth = max(depthL, depthR);
 #endif
@@ -72,10 +99,7 @@ Shader "Render Feature/Anaglyph" {
 				half4 color = (half4)0;
 
 				if (anaglyphDepth > sceneDepth) {
-					color.rgb = anaglyphColor;
-					color.a = 1.0;
-				} else {
-					color = sceneColor;
+					color = anaglyphColor;
 				}
 
                 return color;
