@@ -37,16 +37,17 @@ Shader "Render Feature/Anaglyph" {
             #pragma fragment frag
 
 			uniform TEXTURE2D(_AnaglyphLeft);
+			uniform TEXTURE2D(_AnaglyphLeftDepth);
 			uniform SAMPLER(sampler_AnaglyphLeft);
 
+#ifndef _ANAGLYPH_SINGLE_CHANNEL
 			uniform TEXTURE2D(_AnaglyphRight);
+			uniform TEXTURE2D(_AnaglyphRightDepth);
 			uniform SAMPLER(sampler_AnaglyphRight);
+#endif
 
 			// TEXTURE2D(_BlitTexture); // defined in RP Core > Blit.hlsl
 			uniform SAMPLER(sampler_BlitTexture);
-
-			uniform TEXTURE2D(_AnaglyphLeftDepth);
-			uniform TEXTURE2D(_AnaglyphRightDepth);
 
             half4 frag (Varyings IN, out float depth : SV_Depth) : SV_Target {
 				const half4 sceneColor = SAMPLE_TEXTURE2D(_BlitTexture, sampler_BlitTexture, IN.texcoord);
