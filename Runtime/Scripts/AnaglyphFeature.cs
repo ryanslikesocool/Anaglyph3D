@@ -11,16 +11,13 @@ namespace Anaglyph3D {
 		private AnaglyphPass pass;
 
 		public override void Create() {
-			if (settings.material == null && settings.shader != null) {
-				settings.material = CoreUtils.CreateEngineMaterial(settings.shader);
-			}
-			if (settings.material == null) {
-				SetActive(false);
-				Debug.LogError("A required material is null.  Did you assign required shaders?");
-				return;
-			}
-
 			pass = new AnaglyphPass(settings, "Anaglyph");
+		}
+
+		public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData) {
+			RTHandle color = renderer.cameraColorTargetHandle;
+			RTHandle depth = renderer.cameraDepthTargetHandle;
+			pass.Setup(color, depth);
 		}
 
 		public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
@@ -28,15 +25,16 @@ namespace Anaglyph3D {
 				return;
 			}
 
-			if (pass.Material == null || settings.layerMask == 0) {
+			if (pass.material == null || settings.layerMask == 0) {
 				return;
 			}
 
+			pass.ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
 			renderer.EnqueuePass(pass);
 		}
 
 		protected override void Dispose(bool disposing) {
-			CoreUtils.Destroy(settings.material);
+			CoreUtils.Destroy(pass.material);
 			pass.Release();
 		}
 	}
