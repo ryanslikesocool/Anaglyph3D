@@ -1,6 +1,6 @@
-// Developed With Love by Ryan Boyer http://ryanjboyer.com <3
+// Developed With Love by Ryan Boyer https://ryanjboyer.com <3
 
-Shader "Render Feature/Anaglyph" {
+Shader "Hidden/RenderFeature/Anaglyph/Main" {
     Properties { }
 
     HLSLINCLUDE
@@ -35,60 +35,66 @@ Shader "Render Feature/Anaglyph" {
             #pragma vertex vert
             #pragma fragment frag
 
-			uniform TEXTURE2D(_AnaglyphLeft);
-			uniform TEXTURE2D(_AnaglyphLeftDepth);
+			uniform TEXTURE2D_X(_AnaglyphLeft);
+			uniform TEXTURE2D_X(_AnaglyphLeftDepth);
 			uniform SAMPLER(sampler_AnaglyphLeft);
 
 #ifndef _ANAGLYPH_SINGLE_CHANNEL
-			uniform TEXTURE2D(_AnaglyphRight);
-			uniform TEXTURE2D(_AnaglyphRightDepth);
+			uniform TEXTURE2D_X(_AnaglyphRight);
+			uniform TEXTURE2D_X(_AnaglyphRightDepth);
 			uniform SAMPLER(sampler_AnaglyphRight);
 #endif
 
 #if SHADER_API_GLES
 			struct Attributes {
+				UNITY_VERTEX_INPUT_INSTANCE_ID
 				float4 positionOS : POSITION;
 				float2 texcoord : TEXCOORD0;
 			};
 #else
 			struct Attributes {
+				UNITY_VERTEX_INPUT_INSTANCE_ID
 				uint vertexID : SV_VertexID;
 			};
 #endif
 
 			struct Varyings {
+				UNITY_VERTEX_OUTPUT_STEREO
 				float4 positionCS : SV_POSITION;
 				float2 texcoord : TEXCOORD0;
 			};
 
-			Varyings vert(Attributes input) {
-				Varyings output;
+			Varyings vert(Attributes IN) {
+				Varyings OUT = (Varyings)0;
+
+				UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
 #if SHADER_API_GLES
-				float4 pos = input.positionOS;
-				float2 texcoord  = input.texcoord;
+				OUT.positionCS = IN.positionOS;
+				OUT.texcoord  = IN.texcoord;
 #else
-				float4 pos = GetFullScreenTriangleVertexPosition(input.vertexID);
-				float2 texcoord  = GetFullScreenTriangleTexCoord(input.vertexID);
+				OUT.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);
+				OUT.texcoord  = GetFullScreenTriangleTexCoord(IN.vertexID);
 #endif
 
-				output.positionCS = pos;
-				output.texcoord = texcoord;
-				return output;
+				return OUT;
 			}
 
             half4 frag (Varyings IN, out float depth : SV_Depth) : SV_Target {
+				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+
                 const float sceneDepth = SampleSceneDepth(IN.texcoord);
 
-                const half4 colorL = SAMPLE_TEXTURE2D(_AnaglyphLeft, sampler_AnaglyphLeft, IN.texcoord);
-				const float depthL = SAMPLE_TEXTURE2D(_AnaglyphLeftDepth, sampler_AnaglyphLeft, IN.texcoord).r;
+                const half4 colorL = SAMPLE_TEXTURE2D_X(_AnaglyphLeft, sampler_AnaglyphLeft, IN.texcoord);
+				const float depthL = SAMPLE_TEXTURE2D_X(_AnaglyphLeftDepth, sampler_AnaglyphLeft, IN.texcoord).r;
 
 #ifdef _ANAGLYPH_SINGLE_CHANNEL
 				const half4 anaglyphColor = colorL;
 				const float anaglyphDepth = depthL;
 #else // multi-channel
-				const half4 colorR = SAMPLE_TEXTURE2D(_AnaglyphRight, sampler_AnaglyphRight, IN.texcoord);
-				const float depthR = SAMPLE_TEXTURE2D(_AnaglyphRightDepth, sampler_AnaglyphRight, IN.texcoord).r;
+				const half4 colorR = SAMPLE_TEXTURE2D_X(_AnaglyphRight, sampler_AnaglyphRight, IN.texcoord);
+				const float depthR = SAMPLE_TEXTURE2D_X(_AnaglyphRightDepth, sampler_AnaglyphRight, IN.texcoord).r;
 
 				const half4 anaglyphColor = half4(colorL.x, colorR.y, colorR.z, (colorL.a + colorR.a) * 0.5);
 

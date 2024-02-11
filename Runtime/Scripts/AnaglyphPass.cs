@@ -1,4 +1,4 @@
-// Developed With Love by Ryan Boyer http://ryanjboyer.com <3
+// Developed With Love by Ryan Boyer https://ryanjboyer.com <3
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,7 +7,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace Anaglyph3D {
 	internal sealed class AnaglyphPass : ScriptableRenderPass {
-		private const string SHADER_NAME = "Render Feature/Anaglyph";
+		private const string SHADER_NAME = "Hidden/RenderFeature/Anaglyph/Main";
 
 		private static readonly string[] RenderTargetColorNames = new string[2]  {
 			"_AnaglyphLeft",
@@ -29,12 +29,12 @@ namespace Anaglyph3D {
 
 		private Matrix4x4[] offsetMatrices = null;
 
-		private LocalKeyword singleChannelKeyword;
+		private readonly LocalKeyword singleChannelKeyword;
 
-		internal Material material = null;
-		private Settings settings;
+		internal readonly Material material;
+		private readonly Settings settings;
 
-		public AnaglyphPass(Settings settings, string tag) {
+		public AnaglyphPass(in Settings settings, in string tag) {
 			profilingSampler = new ProfilingSampler(tag);
 			material = CoreUtils.CreateEngineMaterial(SHADER_NAME);
 
@@ -84,14 +84,16 @@ namespace Anaglyph3D {
 		}
 
 		public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
+			if (material == null) {
+				Debug.LogError($"Cannot execute {this}.  Missing material with shader {SHADER_NAME}");
+				return;
+			}
+
 			Camera camera = renderingData.cameraData.camera;
-			Matrix4x4 worldToCameraMatrix = camera.worldToCameraMatrix;
+			Matrix4x4 cameraViewMatrix = camera.worldToCameraMatrix;
 
 			CommandBuffer cmd = CommandBufferPool.Get();
 			using (new ProfilingScope(cmd, profilingSampler)) {
-				context.ExecuteCommandBuffer(cmd);
-				cmd.Clear();
-
 				SortingCriteria sortingCriteria = renderingData.cameraData.defaultOpaqueSortFlags;
 				DrawingSettings drawingSettings = CreateDrawingSettings(shaderTagsList, ref renderingData, sortingCriteria);
 
@@ -101,13 +103,10 @@ namespace Anaglyph3D {
 					Draw(null, RenderTargetColorNames[0], RenderTargetDepthNames[0], renderTargetHandles[0], ref renderingData, ref drawingSettings);
 				} else { // render both channels
 					for (int i = 0; i < 2; i++) {
-						Matrix4x4 viewMatrix = offsetMatrices[i] * worldToCameraMatrix;
+						Matrix4x4 viewMatrix = offsetMatrices[i] * cameraViewMatrix;
 						Draw(viewMatrix, RenderTargetColorNames[i], RenderTargetDepthNames[i], renderTargetHandles[i], ref renderingData, ref drawingSettings);
 					}
 				}
-
-				context.ExecuteCommandBuffer(cmd);
-				cmd.Clear();
 
 				cmd.SetRenderTarget(
 					cameraTargetHandle.color, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
@@ -118,7 +117,7 @@ namespace Anaglyph3D {
 
 				// reset the camera matrix if it was changed
 				if (!settings.SingleChannel) {
-					cmd.SetViewMatrix(worldToCameraMatrix);
+					cmd.SetViewMatrix(cameraViewMatrix);
 				}
 			}
 
