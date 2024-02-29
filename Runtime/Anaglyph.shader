@@ -30,7 +30,7 @@ Shader "Hidden/RenderFeature/Anaglyph/Main" {
             HLSLPROGRAM
             #pragma target 2.0
 
-            #pragma multi_compile_fragment _ _ANAGLYPH_SINGLE_CHANNEL
+            #pragma multi_compile_local_fragment _ _ANAGLYPH_SINGLE_CHANNEL
 
             #pragma vertex vert
             #pragma fragment frag
@@ -72,10 +72,10 @@ Shader "Hidden/RenderFeature/Anaglyph/Main" {
 
 #if SHADER_API_GLES
 				OUT.positionCS = IN.positionOS;
-				OUT.texcoord  = IN.texcoord;
+				OUT.texcoord = IN.texcoord;
 #else
 				OUT.positionCS = GetFullScreenTriangleVertexPosition(IN.vertexID);
-				OUT.texcoord  = GetFullScreenTriangleTexCoord(IN.vertexID);
+				OUT.texcoord = GetFullScreenTriangleTexCoord(IN.vertexID);
 #endif
 
 				return OUT;
