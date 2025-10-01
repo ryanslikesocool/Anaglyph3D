@@ -7,6 +7,8 @@ using UnityEngine.Rendering.RenderGraphModule;
 namespace Anaglyph3D {
 	internal sealed partial class AnaglyphPass {
 		private sealed class PassData {
+			public bool isSingleChannel;
+
 			public RendererListHandle rendererList;
 
 			public Matrix4x4 viewMatrix;
@@ -17,8 +19,6 @@ namespace Anaglyph3D {
 			public Material material;
 			public LocalKeyword singleChannelKeyword;
 			public bool isSingleChannel;
-
-			public TextureHandleGroup[] textureHandles;
 
 			public Matrix4x4 viewMatrix;
 			public Matrix4x4 projectionMatrix;

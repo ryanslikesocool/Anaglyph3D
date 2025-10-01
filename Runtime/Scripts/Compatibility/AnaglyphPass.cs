@@ -216,10 +216,12 @@ namespace Anaglyph3D {
 			depthDescriptor.depthBufferBits = DepthBits.Depth32;
 			depthDescriptor.clearBuffer = false;
 
+			bool isSingleChannel = settings.SingleChannel;
+			int usedChannelCount = isSingleChannel ? 1 : 2;
 			Matrix4x4 cameraViewMatrix = cameraData.GetViewMatrix();
 			Matrix4x4 cameraProjectionMatrix = cameraData.GetProjectionMatrix();
 
-			for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++) {
+			for (int eyeIndex = 0; eyeIndex < usedChannelCount; eyeIndex++) {
 				colorDescriptor.name = RenderTargetColorNames[eyeIndex];
 				depthDescriptor.name = RenderTargetDepthNames[eyeIndex];
 
@@ -235,14 +237,20 @@ namespace Anaglyph3D {
 			DrawingSettings drawingSettings = CreateDrawingSettings(shaderTagsList, renderingData, cameraData, lightData, sortingCriteria);
 			RendererListParams rendererListParams = new(renderingData.cullResults, drawingSettings, filteringSettings);
 
-			if (settings.SingleChannel) { // render only left eyes using the current camera matrix
-				EnqueueEyePass(null, 0);
-			} else { // render both eyes
-				for (int eyeIndex = 0; eyeIndex < 2; eyeIndex++) {
-					EnqueueEyePass(offsetViewMatrices[eyeIndex], eyeIndex);
+			{ // enqueue passes
+			  //  renderGraph.BeginProfilingSampler(profilingSampler);
+
+				if (isSingleChannel) { // render only left eyes using the current camera matrix
+					EnqueueEyePass(null, 0);
+				} else { // render both eyes
+					for (int eyeIndex = 0; eyeIndex < usedChannelCount; eyeIndex++) {
+						EnqueueEyePass(offsetViewMatrices[eyeIndex], eyeIndex);
+					}
 				}
+				EnqueueCombinePass();
+
+				//renderGraph.EndProfilingSampler(profilingSampler);
 			}
-			EnqueueCombinePass();
 
 			void EnqueueEyePass(Matrix4x4? viewMatrixOffset, int eyeIndex) {
 				string passName = string.Format(RenderPassNameFormat, eyeIndex);
@@ -250,19 +258,20 @@ namespace Anaglyph3D {
 				using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData, profilingSampler)) {
 					var rendererList = renderGraph.CreateRendererList(rendererListParams); // Renderer lists can't be reused.
 
+					passData.isSingleChannel = isSingleChannel;
 					passData.rendererList = rendererList;
 
-					if (viewMatrixOffset.HasValue) {
-						passData.viewMatrix = viewMatrixOffset.Value * cameraViewMatrix;
-					} else {
-						passData.viewMatrix = cameraViewMatrix;
-					}
+					//if (viewMatrixOffset.HasValue) {
+					passData.viewMatrix = viewMatrixOffset.HasValue ? (viewMatrixOffset.Value * cameraViewMatrix) : cameraViewMatrix;
+					//} else {
+					//	passData.viewMatrix = cameraViewMatrix;
+					//}
 
 					passData.projectionMatrix = cameraProjectionMatrix;
 
 					builder.UseRendererList(rendererList);
-					builder.AllowGlobalStateModification(true);
-					builder.AllowPassCulling(false); // temporary for debugging
+					//builder.AllowGlobalStateModification(true);
+					//builder.AllowPassCulling(false); // temporary for debugging
 
 					builder.SetRenderAttachment(textureHandles[eyeIndex].color, 0, flags: AccessFlags.Write);
 					builder.SetRenderAttachmentDepth(textureHandles[eyeIndex].depth, flags: AccessFlags.Write);
@@ -276,52 +285,34 @@ namespace Anaglyph3D {
 
 			void EnqueueCombinePass() {
 				using (var builder = renderGraph.AddRasterRenderPass<CombinePassData>(CombinePassName, out var passData, profilingSampler)) {
-					//var destinationColorDescriptor = renderGraph.GetTextureDesc(resourceData.cameraColor);
-					//destinationColorDescriptor.msaaSamples = MSAASamples.None;
-					//destinationColorDescriptor.depthBufferBits = DepthBits.None;
-					//destinationColorDescriptor.clearBuffer = false;
-					//TextureHandle destinationColorTexture = renderGraph.CreateTexture(destinationColorDescriptor);
-
-					//var destinationDepthDescriptor = renderGraph.GetTextureDesc(resourceData.cameraDepth);
-					//destinationDepthDescriptor.msaaSamples = MSAASamples.None;
-					//destinationDepthDescriptor.depthBufferBits = DepthBits.Depth32;
-					//destinationDepthDescriptor.clearBuffer = false;
-					//TextureHandle destinationDepthTexture = renderGraph.CreateTexture(destinationDepthDescriptor);
-
 					passData.material = material;
 					passData.singleChannelKeyword = singleChannelKeyword;
-					passData.isSingleChannel = settings.SingleChannel;
-
-					passData.textureHandles = textureHandles;
-
+					passData.isSingleChannel = isSingleChannel;
 					passData.viewMatrix = cameraViewMatrix;
 					passData.projectionMatrix = cameraProjectionMatrix;
 
-					//builder.UseTexture(resourceData.cameraColor, flags: AccessFlags.ReadWrite);
-					//builder.UseTexture(resourceData.cameraDepth, flags: AccessFlags.ReadWrite);
-					for (int i = 0; i < textureHandles.Length; i++) {
+					for (int i = 0; i < usedChannelCount; i++) {
 						builder.UseGlobalTexture(RenderTargetColorIDs[i]);
 						builder.UseGlobalTexture(RenderTargetDepthIDs[i]);
 					}
 
 					builder.AllowGlobalStateModification(true);
-					builder.AllowPassCulling(false); // temporary for debugging
+					//builder.AllowPassCulling(false); // temporary for debugging
 
-					builder.SetRenderAttachment(resourceData.cameraColor, 0, flags: AccessFlags.ReadWrite);
-					builder.SetRenderAttachmentDepth(resourceData.cameraDepth, flags: AccessFlags.ReadWrite);
+					builder.SetRenderAttachment(resourceData.cameraColor, 0, flags: AccessFlags.Write);
+					builder.SetRenderAttachmentDepth(resourceData.cameraDepth, flags: AccessFlags.Write);
 
 					builder.SetRenderFunc<CombinePassData>(ExecuteCombinePass);
-
-					//resourceData.cameraColor = destinationColorTexture;
-					//resourceData.cameraDepth = destinationDepthTexture;
 				}
 			}
 
 			static void ExecuteRenderPass(PassData passData, RasterGraphContext context) {
-				context.cmd.SetViewProjectionMatrices(
+				if (!passData.isSingleChannel) {
+					context.cmd.SetViewProjectionMatrices(
 					view: passData.viewMatrix,
 					proj: passData.projectionMatrix
 				);
+				}
 
 				context.cmd.DrawRendererList(passData.rendererList);
 			}
