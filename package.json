@@ -1,18 +1,17 @@
 {
-  "name": "com.developedwithlove.anaglyph3d",
-  "displayName": "Anaglyph3D",
-  "version": "4.0.0-pre.2",
-  "unity": "2022.3",
-  "description": "Anaglyph 3D (red/cyan) render feature for Unity's Universal Render Pipeline.",
-  "documentationUrl": "https://github.com/ryanslikesocool/Anaglyph3D",
-  "licenseUrl": "https://github.com/ryanslikesocool/Anaglyph3D/blob/main/LICENSE.md",
-  "author": {
-    "name": "Ryan Boyer",
-    "email": "ryanjboyer@gmail.com",
-    "url": "https://ryanjboyer.com/"
-  },
-  "dependencies": {
-    "com.unity.render-pipelines.universal": "14.0.9"
-  },
-  "hideInEditor": false
+	"name": "com.developedwithlove.anaglyph3d",
+	"displayName": "Anaglyph3D",
+	"version": "4.0.0-pre.2",
+	"unity": "2022.3",
+	"description": "Anaglyph 3D (red/cyan) render feature for Unity's Universal Render Pipeline.",
+	"documentationUrl": "https://github.com/ryanslikesocool/Anaglyph3D",
+	"licenseUrl": "https://github.com/ryanslikesocool/Anaglyph3D/blob/main/LICENSE.md",
+	"author": {
+		"name": "Ryan Boyer",
+		"url": "https://ryanjboyer.com/"
+	},
+	"dependencies": {
+		"com.unity.render-pipelines.universal": "14.0.9"
+	},
+	"hideInEditor": false
 }

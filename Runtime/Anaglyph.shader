@@ -11,7 +11,7 @@ Shader "Hidden/RenderFeature/Anaglyph/Main" {
     SubShader {
         Tags {
             "RenderPipeline" = "UniversalPipeline"
-            "UniversalMaterialType" = "SimpleLit"
+            //"UniversalMaterialType" = "SimpleLit"
             "LightMode" = "SRPDefaultUnlit"
 			"RenderType" = "Overlay"
 			"Queue" = "Overlay"
