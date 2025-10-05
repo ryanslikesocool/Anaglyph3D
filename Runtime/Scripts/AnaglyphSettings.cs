@@ -14,6 +14,8 @@ namespace Anaglyph3D {
 		public Queue queue = Queue.Opaque;
 		[Tooltip("Which layers should be rendered?")]
 		public LayerMask layerMask = -1;
+		[Tooltip("Which rendering layers should be rendered?")]
+		internal RenderingLayerMask renderingLayerMask = uint.MaxValue; // TODO: expose if/when Unity exposes this for built-in renderers
 
 		[Header("Camera")]
 		[Tooltip("The spacing between the red and cyan channels.\nA value of '0' will ignore the focal point.  This is useful for orthographic cameras.\nA negative value will swap red and cyan.")]

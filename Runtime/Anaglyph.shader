@@ -11,7 +11,6 @@ Shader "Hidden/RenderFeature/Anaglyph/Main" {
     SubShader {
         Tags {
             "RenderPipeline" = "UniversalPipeline"
-            //"UniversalMaterialType" = "SimpleLit"
             "LightMode" = "SRPDefaultUnlit"
 			"RenderType" = "Overlay"
 			"Queue" = "Overlay"
@@ -39,7 +38,7 @@ Shader "Hidden/RenderFeature/Anaglyph/Main" {
 			uniform TEXTURE2D_X(_AnaglyphLeftDepth);
 			uniform SAMPLER(sampler_AnaglyphLeft);
 
-#ifndef _ANAGLYPH_SINGLE_CHANNEL
+#if !defined(_ANAGLYPH_SINGLE_CHANNEL)
 			uniform TEXTURE2D_X(_AnaglyphRight);
 			uniform TEXTURE2D_X(_AnaglyphRightDepth);
 			uniform SAMPLER(sampler_AnaglyphRight);
@@ -89,7 +88,7 @@ Shader "Hidden/RenderFeature/Anaglyph/Main" {
                 const half4 colorL = SAMPLE_TEXTURE2D_X(_AnaglyphLeft, sampler_AnaglyphLeft, IN.texcoord);
 				const float depthL = SAMPLE_TEXTURE2D_X(_AnaglyphLeftDepth, sampler_AnaglyphLeft, IN.texcoord).r;
 
-#ifdef _ANAGLYPH_SINGLE_CHANNEL
+#if defined(_ANAGLYPH_SINGLE_CHANNEL)
 				const half4 anaglyphColor = colorL;
 				const float anaglyphDepth = depthL;
 #else // multi-channel

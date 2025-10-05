@@ -6,7 +6,7 @@ using UnityEngine.Rendering.RenderGraphModule;
 
 namespace Anaglyph3D {
 	internal sealed partial class AnaglyphPass {
-		private sealed class PassData {
+		private sealed class EyePassData {
 			public bool isSingleChannel;
 
 			public RendererListHandle rendererList;

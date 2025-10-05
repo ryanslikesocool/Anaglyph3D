@@ -55,12 +55,12 @@ namespace Anaglyph3D {
 			profilingSampler = new ProfilingSampler(tag);
 			material = CoreUtils.CreateEngineMaterial(SHADER_NAME);
 
-			filteringSettings = new FilteringSettings(settings.QueueRange, settings.layerMask);
+			filteringSettings = new FilteringSettings(settings.QueueRange, settings.layerMask, settings.renderingLayerMask);
 			renderStateBlock = new RenderStateBlock(RenderStateMask.Nothing);
 
-			shaderTagsList.Add(new ShaderTagId("SRPDefaultUnlit"));
-			shaderTagsList.Add(new ShaderTagId("UniversalForward"));
-			shaderTagsList.Add(new ShaderTagId("UniversalForwardOnly"));
+			shaderTagsList.Add(new("SRPDefaultUnlit"));
+			shaderTagsList.Add(new("UniversalForward"));
+			shaderTagsList.Add(new("UniversalForwardOnly"));
 
 			this.renderPassEvent = settings.renderPassEvent;
 			this.settings = settings;
@@ -69,7 +69,7 @@ namespace Anaglyph3D {
 			renderTargetHandles = new RTHandleGroup[2];
 			textureHandles = new TextureHandleGroup[2];
 
-			singleChannelKeyword = new LocalKeyword(material.shader, "_ANAGLYPH_SINGLE_CHANNEL");
+			singleChannelKeyword = new(material.shader, "_ANAGLYPH_SINGLE_CHANNEL");
 		}
 
 #if UNITY_2023_3_OR_NEWER
@@ -84,8 +84,6 @@ namespace Anaglyph3D {
 
 		public override void OnCameraCleanup(CommandBuffer cmd) {
 			cameraTargetHandle = default;
-
-			cmd.DisableKeyword(material, singleChannelKeyword);
 		}
 
 		public void Release() {
@@ -255,18 +253,12 @@ namespace Anaglyph3D {
 			void EnqueueEyePass(Matrix4x4? viewMatrixOffset, int eyeIndex) {
 				string passName = string.Format(RenderPassNameFormat, eyeIndex);
 
-				using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData, profilingSampler)) {
+				using (var builder = renderGraph.AddRasterRenderPass<EyePassData>(passName, out var passData, profilingSampler)) {
 					var rendererList = renderGraph.CreateRendererList(rendererListParams); // Renderer lists can't be reused.
 
 					passData.isSingleChannel = isSingleChannel;
 					passData.rendererList = rendererList;
-
-					//if (viewMatrixOffset.HasValue) {
 					passData.viewMatrix = viewMatrixOffset.HasValue ? (viewMatrixOffset.Value * cameraViewMatrix) : cameraViewMatrix;
-					//} else {
-					//	passData.viewMatrix = cameraViewMatrix;
-					//}
-
 					passData.projectionMatrix = cameraProjectionMatrix;
 
 					builder.UseRendererList(rendererList);
@@ -279,7 +271,7 @@ namespace Anaglyph3D {
 					builder.SetGlobalTextureAfterPass(textureHandles[eyeIndex].color, RenderTargetColorIDs[eyeIndex]);
 					builder.SetGlobalTextureAfterPass(textureHandles[eyeIndex].depth, RenderTargetDepthIDs[eyeIndex]);
 
-					builder.SetRenderFunc<PassData>(ExecuteRenderPass);
+					builder.SetRenderFunc<EyePassData>(ExecuteRenderPass);
 				}
 			}
 
@@ -306,12 +298,12 @@ namespace Anaglyph3D {
 				}
 			}
 
-			static void ExecuteRenderPass(PassData passData, RasterGraphContext context) {
+			static void ExecuteRenderPass(EyePassData passData, RasterGraphContext context) {
 				if (!passData.isSingleChannel) {
 					context.cmd.SetViewProjectionMatrices(
-					view: passData.viewMatrix,
-					proj: passData.projectionMatrix
-				);
+						view: passData.viewMatrix,
+						proj: passData.projectionMatrix
+					);
 				}
 
 				context.cmd.DrawRendererList(passData.rendererList);
