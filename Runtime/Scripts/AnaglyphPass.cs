@@ -201,17 +201,16 @@ namespace Anaglyph3D {
 			UniversalLightData lightData = frameData.Get<UniversalLightData>();
 			UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
 
-			// TODO: validate if this is still true
-			// depth doesn't write if MSAA is on for some reason?
+			// TODO: figure out how to support MSAA
 
 			var colorDescriptor = renderGraph.GetTextureDesc(resourceData.cameraColor);
-			colorDescriptor.msaaSamples = MSAASamples.None;
-			colorDescriptor.depthBufferBits = DepthBits.None;
+			//colorDescriptor.msaaSamples = MSAASamples.None;
+			//colorDescriptor.depthBufferBits = DepthBits.None;
 			colorDescriptor.clearBuffer = false;
 
 			var depthDescriptor = renderGraph.GetTextureDesc(resourceData.cameraDepth);
-			depthDescriptor.msaaSamples = MSAASamples.None;
-			depthDescriptor.depthBufferBits = DepthBits.Depth32;
+			//depthDescriptor.msaaSamples = MSAASamples.None;
+			//depthDescriptor.depthBufferBits = DepthBits.Depth32;
 			depthDescriptor.clearBuffer = false;
 
 			bool isSingleChannel = settings.SingleChannel;

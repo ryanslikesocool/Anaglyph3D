@@ -48,6 +48,7 @@ namespace Anaglyph3D {
 			}
 
 			pass.ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
+
 			renderer.EnqueuePass(pass);
 		}
 	}

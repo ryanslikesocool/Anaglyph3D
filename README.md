@@ -4,9 +4,12 @@
 ![Sample Image](images~/sample.jpg)
 
 ## Requirements
-Anaglyph3D [v2](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v2.1.1) requires Unity 2021.3 with URP 12.1.8 or later.\
-Anaglyph3D [v3](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v3.1.0) requires Unity 2022.1 or later with URP 13.1.7 or later.\
-Anaglyph3D [v4](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v4.0.0-pre.1) requires Unity 2022.3 or later with URP 14.0.9 or later.
+| Package Version | Unity Version | URP Version |
+| - | - | - |
+| [2.x](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v2.1.1) | 2021.3 | 12.1.8 |
+| [3.x](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v3.1.0) | 2022.1 | 13.1.7 |
+| [4.x](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v4.0.0-pre.1) | 2022.3 | 14.0.9 |
+<!--| [5.x](https://github.com/ryanslikesocool/Anaglyph3D/releases/tag/v5.0.0-pre.1) | 6000.2 | 17.2 |-->
 
 ## Install
 **Recommended Installation** (Unity Package Manager)
@@ -30,3 +33,6 @@ In your Forward Renderer asset, add the "Anaglyph Feature" render feature and ch
 
 ## Notes
 - Rendering with this effect may be expensive, since the whole screen must be rendered up to three times every frame.
+
+## Known Issues and Limitations
+- The effect does not currently support MSAA.
